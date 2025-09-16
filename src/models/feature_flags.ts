@@ -1,6 +1,6 @@
 export type FeatureFlag =
-  | 'synthetic_primary_group'
-  | 'mirror_nested_groups';
+  | "synthetic_primary_group"
+  | "mirror_nested_groups";
 
 export interface FeatureFlagState {
   name: FeatureFlag;
@@ -10,9 +10,9 @@ export interface FeatureFlagState {
 
 export function parseFeatureFlags(envValue: string | undefined): FeatureFlag[] {
   if (!envValue) return [];
-  const allowed: FeatureFlag[] = ['synthetic_primary_group', 'mirror_nested_groups'];
+  const allowed: FeatureFlag[] = ["synthetic_primary_group", "mirror_nested_groups"];
   const set = new Set(
-    envValue.split(',')
+    envValue.split(",")
       .map((v) => v.trim())
       .filter((v) => allowed.includes(v as FeatureFlag)),
   );

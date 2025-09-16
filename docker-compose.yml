@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # LDAP-to-ID Proxy
@@ -10,7 +10,7 @@ services:
     container_name: ldaptoid
     restart: unless-stopped
     ports:
-      - "389:389"   # LDAP port
+      - "389:389" # LDAP port
       - "8080:8080" # Health check port
       - "9090:9090" # Metrics port
     environment:
@@ -19,28 +19,28 @@ services:
       LDAPTOID_IDP_BASE_URL: ${LDAPTOID_IDP_BASE_URL}
       LDAPTOID_IDP_CLIENT_ID: ${LDAPTOID_IDP_CLIENT_ID}
       LDAPTOID_IDP_CLIENT_SECRET: ${LDAPTOID_IDP_CLIENT_SECRET}
-      
+
       # IdP-specific configuration
       LDAPTOID_IDP_REALM: ${LDAPTOID_IDP_REALM:-}
       LDAPTOID_IDP_TENANT: ${LDAPTOID_IDP_TENANT:-}
       LDAPTOID_IDP_ORGANIZATION: ${LDAPTOID_IDP_ORGANIZATION:-}
-      
+
       # LDAP configuration
       LDAPTOID_LDAP_BASE_DN: ${LDAPTOID_LDAP_BASE_DN:-dc=company,dc=com}
       LDAPTOID_LDAP_BIND_DN: ${LDAPTOID_LDAP_BIND_DN:-}
       LDAPTOID_LDAP_BIND_PASSWORD: ${LDAPTOID_LDAP_BIND_PASSWORD:-}
       LDAPTOID_ALLOW_ANONYMOUS_BIND: ${LDAPTOID_ALLOW_ANONYMOUS_BIND:-true}
-      
+
       # Redis configuration
       LDAPTOID_REDIS_ENABLED: "true"
       LDAPTOID_REDIS_HOST: "redis"
       LDAPTOID_REDIS_PORT: "6379"
       LDAPTOID_REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       LDAPTOID_REDIS_DATABASE: "0"
-      
+
       # Feature flags
       LDAPTOID_ENABLED_FEATURES: ${LDAPTOID_ENABLED_FEATURES:-synthetic_primary_group}
-      
+
       # Operational settings
       LDAPTOID_VERBOSE: ${LDAPTOID_VERBOSE:-false}
     depends_on:
@@ -89,12 +89,12 @@ services:
     ports:
       - "9091:9090"
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=15d'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus

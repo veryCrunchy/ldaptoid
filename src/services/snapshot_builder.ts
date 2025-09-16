@@ -3,7 +3,7 @@
 
 import { Adaptor, RawGroup } from "../adaptors/types.ts";
 import { IdAllocator } from "./id_allocator.ts";
-import { Snapshot, User, Group } from "../models/mod.ts";
+import { Group, Snapshot, User } from "../models/mod.ts";
 import { FeatureFlag } from "../models/feature_flags.ts";
 
 export interface SnapshotBuilderOptions {
@@ -31,13 +31,13 @@ export class SnapshotBuilder {
     // Fetch raw data from adaptor
     const [rawUsers, rawGroups] = await Promise.all([
       adaptor.fetchUsers(),
-      adaptor.fetchGroups()
+      adaptor.fetchGroups(),
     ]);
 
     // Convert adaptor users to domain users with POSIX attributes
     const users: User[] = rawUsers
-      .filter(u => u.enabled) // Filter inactive users per research.md
-      .map(user => ({
+      .filter((u) => u.enabled) // Filter inactive users per research.md
+      .map((user) => ({
         id: user.id,
         username: user.username,
         displayName: user.displayName || user.username, // Fallback to username
@@ -47,14 +47,14 @@ export class SnapshotBuilder {
         primaryGroupId: this.getSyntheticPrimaryGroupId(user.id),
         memberGroupIds: [], // Will be populated during group processing
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       }));
 
     // Process groups
     const groups = this.processGroups(rawGroups, users);
 
     // Add synthetic primary groups if feature enabled
-    if (this.enabledFeatures.has('synthetic_primary_group')) {
+    if (this.enabledFeatures.has("synthetic_primary_group")) {
       const syntheticGroups = this.createSyntheticPrimaryGroups(users);
       groups.push(...syntheticGroups);
     }
@@ -64,31 +64,31 @@ export class SnapshotBuilder {
       groups,
       generatedAt: new Date().toISOString(),
       sequence: ++this.sequenceCounter,
-      featureFlags: [...this.enabledFeatures]
+      featureFlags: [...this.enabledFeatures],
     };
   }
 
   private getSyntheticPrimaryGroupId(userId: string): string {
-    if (this.enabledFeatures.has('synthetic_primary_group')) {
+    if (this.enabledFeatures.has("synthetic_primary_group")) {
       return `synthetic:${userId}`;
     }
     // Default fallback group
-    return 'users';
+    return "users";
   }
 
   private processGroups(rawGroups: RawGroup[], users: User[]): Group[] {
-    const userIdMap = new Map(users.map(u => [u.id, u]));
-    
-    return rawGroups.map(group => {
+    const userIdMap = new Map(users.map((u) => [u.id, u]));
+
+    return rawGroups.map((group) => {
       const gid = this.gidAllocator.allocate(`group:${group.id}`).id;
-      
+
       // Resolve member user IDs (adaptor groups use different schema)
       const memberUserIds = group.members || [];
       const truncated = memberUserIds.length > this.maxGroupMembers;
       const finalMemberIds = truncated ? memberUserIds.slice(0, this.maxGroupMembers) : memberUserIds;
 
       // Update user memberGroupIds
-      finalMemberIds.forEach(userId => {
+      finalMemberIds.forEach((userId) => {
         const user = userIdMap.get(userId);
         if (user) {
           user.memberGroupIds.push(group.id);
@@ -103,13 +103,13 @@ export class SnapshotBuilder {
         memberGroupIds: [], // No nested groups in Phase 1
         posixGid: gid,
         isSynthetic: false,
-        truncated
+        truncated,
       };
     });
   }
 
   private createSyntheticPrimaryGroups(users: User[]): Group[] {
-    return users.map(user => ({
+    return users.map((user) => ({
       id: `synthetic:${user.id}`,
       name: `${user.username}-primary`,
       description: `Primary group for ${user.username}`,
@@ -117,7 +117,7 @@ export class SnapshotBuilder {
       memberGroupIds: [],
       posixGid: this.gidAllocator.allocate(`synthetic:${user.id}`).id,
       isSynthetic: true,
-      truncated: false
+      truncated: false,
     }));
   }
 }

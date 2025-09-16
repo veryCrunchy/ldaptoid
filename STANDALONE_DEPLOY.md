@@ -1,10 +1,12 @@
 # LDAP-to-ID Proxy - Copy & Paste Deployment
 
-This is a **completely standalone** Docker Compose configuration that can be copy-pasted into any deployment platform like Dokploy, Coolify, Portainer, or used directly with Docker Compose.
+This is a **completely standalone** Docker Compose configuration that can be copy-pasted into any deployment platform
+like Dokploy, Coolify, Portainer, or used directly with Docker Compose.
 
 ## 🚀 One-File Deployment
 
-**Just copy the `docker-compose.standalone.yml` file** - that's it! No repository cloning, no build dependencies, no additional files needed.
+**Just copy the `docker-compose.standalone.yml` file** - that's it! No repository cloning, no build dependencies, no
+additional files needed.
 
 ### Quick Deploy
 
@@ -18,10 +20,10 @@ This is a **completely standalone** Docker Compose configuration that can be cop
 2. Paste the contents of `docker-compose.standalone.yml`
 3. Update these environment variables:
    ```yaml
-   LDAPTOID_IDP_TYPE: "zitadel"                    # Change to your IdP
-   LDAPTOID_IDP_BASE_URL: "https://your-idp.com"  # Your IdP URL
-   LDAPTOID_IDP_CLIENT_ID: "your-client-id"       # Your client ID
-   LDAPTOID_IDP_CLIENT_SECRET: "your-secret"      # Your client secret
+   LDAPTOID_IDP_TYPE: "zitadel" # Change to your IdP
+   LDAPTOID_IDP_BASE_URL: "https://your-idp.com" # Your IdP URL
+   LDAPTOID_IDP_CLIENT_ID: "your-client-id" # Your client ID
+   LDAPTOID_IDP_CLIENT_SECRET: "your-secret" # Your client secret
    ```
 4. Deploy!
 
@@ -31,7 +33,7 @@ Edit these **4 environment variables** in the compose file:
 
 ```yaml
 environment:
-  LDAPTOID_IDP_TYPE: "zitadel"                    # keycloak|entra|zitadel
+  LDAPTOID_IDP_TYPE: "zitadel" # keycloak|entra|zitadel
   LDAPTOID_IDP_BASE_URL: "https://your-idp.example.com"
   LDAPTOID_IDP_CLIENT_ID: "your-client-id"
   LDAPTOID_IDP_CLIENT_SECRET: "your-client-secret"
@@ -88,24 +90,28 @@ The configuration includes sensible production defaults:
 ## 🐳 Platform-Specific Instructions
 
 ### Dokploy
+
 1. Create new service → Docker Compose
 2. Paste the `docker-compose.standalone.yml` content
 3. Edit environment variables
 4. Deploy
 
 ### Coolify
+
 1. New Resource → Docker Compose
 2. Paste the configuration
 3. Set environment variables
 4. Deploy
 
 ### Portainer
+
 1. Stacks → Add Stack
 2. Paste the compose file
 3. Update environment variables
 4. Deploy
 
 ### Raw Docker Compose
+
 ```bash
 # Save as docker-compose.yml and run:
 docker-compose up -d
@@ -133,33 +139,36 @@ After deployment, access these services:
 ## 🔧 Customization
 
 ### Change Redis Password
+
 ```yaml
 # In redis service:
 command:
   - redis-server
   - --requirepass
-  - "your-secure-password"  # Change this
+  - "your-secure-password" # Change this
 
 # In ldaptoid service:
 environment:
-  LDAPTOID_REDIS_PASSWORD: "your-secure-password"  # Change this
+  LDAPTOID_REDIS_PASSWORD: "your-secure-password" # Change this
 
 # In redis-exporter service:
 environment:
-  REDIS_PASSWORD: "your-secure-password"  # Change this
+  REDIS_PASSWORD: "your-secure-password" # Change this
 ```
 
 ### Adjust Resource Limits
+
 ```yaml
 # Add to any service:
 deploy:
   resources:
     limits:
       memory: 512M
-      cpus: '0.5'
+      cpus: "0.5"
 ```
 
 ### Custom Base DN
+
 ```yaml
 # In ldaptoid service:
 environment:
@@ -169,6 +178,7 @@ environment:
 ## 🐛 Troubleshooting
 
 ### Service Not Starting
+
 ```bash
 # Check logs
 docker-compose -f docker-compose.standalone.yml logs ldaptoid
@@ -178,6 +188,7 @@ docker-compose -f docker-compose.standalone.yml ps
 ```
 
 ### LDAP Connection Issues
+
 ```bash
 # Verify LDAP port is accessible
 nc -v your-server 389
@@ -187,6 +198,7 @@ curl http://your-server:8080/health
 ```
 
 ### IdP Authentication Issues
+
 ```bash
 # Test IdP connectivity
 curl -v https://your-idp.example.com
@@ -198,6 +210,7 @@ docker-compose logs ldaptoid | grep -i oauth
 ## 📚 Full Documentation
 
 For advanced configuration and production deployment guides:
+
 - [Main Repository](https://github.com/obiente/ldaptoid)
 - [Production Deployment Guide](https://github.com/obiente/ldaptoid/blob/main/DEPLOYMENT.md)
 - [Production Checklist](https://github.com/obiente/ldaptoid/blob/main/PRODUCTION_CHECKLIST.md)

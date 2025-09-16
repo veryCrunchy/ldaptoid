@@ -2,21 +2,21 @@
 // Evaluates LDAP filters against snapshot data and generates search results
 
 import {
-  SearchRequest,
-  SearchResultEntry,
+  AndFilter,
+  EqualityMatchFilter,
   Filter,
   FilterType,
   LDAPMessageType,
-  AndFilter,
-  OrFilter,
   NotFilter,
-  EqualityMatchFilter,
-  SubstringsFilter,
+  OrFilter,
   PresentFilter,
-  SubstringFilter as _SubstringFilter,
+  SearchRequest,
+  SearchResultEntry,
   SearchScope as Scope,
+  SubstringFilter as _SubstringFilter,
+  SubstringsFilter,
 } from "../protocol/ldap.ts";
-import { Snapshot, User, Group } from "../models/mod.ts";
+import { Group, Snapshot, User } from "../models/mod.ts";
 
 export interface SearchOptions {
   sizeLimit?: number;
@@ -93,7 +93,7 @@ export class SearchExecutor {
 
   private getCandidateEntries(
     baseObject: string,
-    scope: Scope
+    scope: Scope,
   ): Array<{ entity: User | Group | null; dn: string; type: "user" | "group" | "rootDSE" }> {
     const candidates: Array<{
       entity: User | Group | null;
@@ -162,7 +162,7 @@ export class SearchExecutor {
   }
 
   private findEntityByDN(
-    dn: string
+    dn: string,
   ): { entity: User | Group | null; dn: string; type: "user" | "group" | "rootDSE" } | null {
     const lowerDN = dn.toLowerCase();
 
@@ -192,13 +192,11 @@ export class SearchExecutor {
   private evaluateFilter(
     filter: Filter,
     entity: User | Group | null,
-    entityType: "user" | "group" | "rootDSE"
+    entityType: "user" | "group" | "rootDSE",
   ): boolean {
     switch (filter.type) {
       case FilterType.And:
-        return (filter as AndFilter).filters.every((f) =>
-          this.evaluateFilter(f, entity, entityType)
-        );
+        return (filter as AndFilter).filters.every((f) => this.evaluateFilter(f, entity, entityType));
 
       case FilterType.Or:
         return (filter as OrFilter).filters.some((f) => this.evaluateFilter(f, entity, entityType));
@@ -212,7 +210,7 @@ export class SearchExecutor {
           eqFilter.attributeDesc,
           eqFilter.assertionValue,
           entity,
-          entityType
+          entityType,
         );
       }
 
@@ -246,7 +244,7 @@ export class SearchExecutor {
     attribute: string,
     value: string,
     entity: User | Group | null,
-    entityType: "user" | "group" | "rootDSE"
+    entityType: "user" | "group" | "rootDSE",
   ): boolean {
     const attrLower = attribute.toLowerCase();
     const valueLower = value.toLowerCase();
@@ -311,7 +309,7 @@ export class SearchExecutor {
     attribute: string,
     substrings: { initial?: string; any?: string[]; final?: string },
     entity: User | Group | null,
-    entityType: "user" | "group" | "rootDSE"
+    entityType: "user" | "group" | "rootDSE",
   ): boolean {
     if (entityType === "rootDSE" || !entity) return false;
 
@@ -345,11 +343,11 @@ export class SearchExecutor {
   private evaluatePresentFilter(
     attribute: string,
     entity: User | Group | null,
-    entityType: "user" | "group" | "rootDSE"
+    entityType: "user" | "group" | "rootDSE",
   ): boolean {
     if (entityType === "rootDSE") {
       return ["objectclass", "namingcontexts", "supportedldapversion"].includes(
-        attribute.toLowerCase()
+        attribute.toLowerCase(),
       );
     }
 
@@ -362,7 +360,7 @@ export class SearchExecutor {
   private getAttributeValue(
     attribute: string,
     entity: User | Group,
-    entityType: "user" | "group"
+    entityType: "user" | "group",
   ): string | null {
     const attrLower = attribute.toLowerCase();
 
@@ -435,7 +433,7 @@ export class SearchExecutor {
 
   private createSearchResultEntry(
     candidate: { entity: User | Group | null; dn: string; type: "user" | "group" | "rootDSE" },
-    requestedAttributes: string[]
+    requestedAttributes: string[],
   ): SearchResultEntry {
     const attributes = [];
     const allAttrs = requestedAttributes.length === 0 || requestedAttributes.includes("*");

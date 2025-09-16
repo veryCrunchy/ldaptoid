@@ -46,7 +46,7 @@ export class HealthService {
     this.options = {
       snapshotMaxAgeMs: options.snapshotMaxAgeMs ?? 3600000, // 1 hour
       adaptorTimeoutMs: options.adaptorTimeoutMs ?? 5000,
-      enableDetailedChecks: options.enableDetailedChecks ?? true
+      enableDetailedChecks: options.enableDetailedChecks ?? true,
     };
   }
 
@@ -75,7 +75,7 @@ export class HealthService {
       adaptor: await this.checkAdaptor(),
       ldapServer: this.checkLDAPServer(),
       refreshScheduler: this.checkRefreshScheduler(),
-      ...(this.redisClient && { redis: await this.checkRedis() })
+      ...(this.redisClient && { redis: await this.checkRedis() }),
     };
 
     // Determine overall status
@@ -86,20 +86,20 @@ export class HealthService {
       timestamp,
       checks,
       uptime,
-      version: Deno.env.get("LDAPTOID_VERSION") || "dev"
+      version: Deno.env.get("LDAPTOID_VERSION") || "dev",
     };
   }
 
   async getReadiness(): Promise<{ ready: boolean; message: string }> {
     const health = await this.getHealthStatus();
-    
+
     // Service is ready if snapshot and adaptor are healthy
-    const ready = health.checks.snapshot.status !== "fail" && 
-                  health.checks.adaptor.status !== "fail";
+    const ready = health.checks.snapshot.status !== "fail" &&
+      health.checks.adaptor.status !== "fail";
 
     return {
       ready,
-      message: ready ? "Service is ready" : "Service is not ready - check health endpoint for details"
+      message: ready ? "Service is ready" : "Service is not ready - check health endpoint for details",
     };
   }
 
@@ -112,7 +112,7 @@ export class HealthService {
 
     return {
       alive,
-      message: alive ? "Service is alive" : "Service is not responding properly"
+      message: alive ? "Service is alive" : "Service is not responding properly",
     };
   }
 
@@ -120,16 +120,16 @@ export class HealthService {
     if (!this.refreshScheduler) {
       return {
         status: "fail",
-        message: "Refresh scheduler not configured"
+        message: "Refresh scheduler not configured",
       };
     }
 
     const snapshot = this.refreshScheduler.getCurrentSnapshot();
-    
+
     if (!snapshot) {
       return {
         status: "fail",
-        message: "No snapshot available"
+        message: "No snapshot available",
       };
     }
 
@@ -139,12 +139,14 @@ export class HealthService {
     return {
       status: isStale ? "warn" : "pass",
       message: isStale ? "Snapshot is stale" : "Snapshot is current",
-      details: this.options.enableDetailedChecks ? {
-        userCount: snapshot.users.length,
-        groupCount: snapshot.groups.length,
-        approximateAgeMs: age,
-        maxAgeMs: this.options.snapshotMaxAgeMs
-      } : undefined
+      details: this.options.enableDetailedChecks
+        ? {
+          userCount: snapshot.users.length,
+          groupCount: snapshot.groups.length,
+          approximateAgeMs: age,
+          maxAgeMs: this.options.snapshotMaxAgeMs,
+        }
+        : undefined,
     };
   }
 
@@ -152,7 +154,7 @@ export class HealthService {
     if (!this.adaptor) {
       return {
         status: "fail",
-        message: "Adaptor not configured"
+        message: "Adaptor not configured",
       };
     }
 
@@ -167,19 +169,20 @@ export class HealthService {
         Promise.resolve(this.performAdaptorHealthCheck()),
         new Promise<HealthCheck>((_, reject) => {
           setTimeout(() => reject(new Error("Health check timeout")), this.options.adaptorTimeoutMs);
-        })
+        }),
       ]);
 
       clearTimeout(timeoutId);
       return healthResult;
-
     } catch (error) {
       return {
         status: "fail",
         message: `Adaptor health check failed: ${error instanceof Error ? error.message : String(error)}`,
-        details: this.options.enableDetailedChecks ? {
-          error: error instanceof Error ? error.message : String(error)
-        } : undefined
+        details: this.options.enableDetailedChecks
+          ? {
+            error: error instanceof Error ? error.message : String(error),
+          }
+          : undefined,
       };
     }
   }
@@ -192,14 +195,16 @@ export class HealthService {
       return {
         status: "pass",
         message: "Adaptor is responding",
-        details: this.options.enableDetailedChecks ? {
-          adaptorType: this.adaptor?.constructor.name || "unknown"
-        } : undefined
+        details: this.options.enableDetailedChecks
+          ? {
+            adaptorType: this.adaptor?.constructor.name || "unknown",
+          }
+          : undefined,
       };
     } catch (error) {
       return {
         status: "fail",
-        message: `Adaptor check failed: ${error instanceof Error ? error.message : String(error)}`
+        message: `Adaptor check failed: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -210,16 +215,18 @@ export class HealthService {
     if (!this.ldapServer) {
       return {
         status: "fail",
-        message: "LDAP server not configured"
+        message: "LDAP server not configured",
       };
     }
 
     return {
       status: "pass",
       message: "LDAP server is running",
-      details: this.options.enableDetailedChecks ? {
-        serverType: "TCP LDAP v3"
-      } : undefined
+      details: this.options.enableDetailedChecks
+        ? {
+          serverType: "TCP LDAP v3",
+        }
+        : undefined,
     };
   }
 
@@ -227,7 +234,7 @@ export class HealthService {
     if (!this.refreshScheduler) {
       return {
         status: "fail",
-        message: "Refresh scheduler not configured"
+        message: "Refresh scheduler not configured",
       };
     }
 
@@ -238,7 +245,7 @@ export class HealthService {
       return {
         status: "fail",
         message: `Refresh scheduler unhealthy: ${schedulerStatus.consecutiveFailures} consecutive failures`,
-        details: this.options.enableDetailedChecks ? schedulerStatus : undefined
+        details: this.options.enableDetailedChecks ? schedulerStatus : undefined,
       };
     }
 
@@ -246,14 +253,14 @@ export class HealthService {
       return {
         status: "warn",
         message: `Refresh scheduler recovering from ${schedulerStatus.consecutiveFailures} failures`,
-        details: this.options.enableDetailedChecks ? schedulerStatus : undefined
+        details: this.options.enableDetailedChecks ? schedulerStatus : undefined,
       };
     }
 
     return {
       status: "pass",
       message: "Refresh scheduler is healthy",
-      details: this.options.enableDetailedChecks ? schedulerStatus : undefined
+      details: this.options.enableDetailedChecks ? schedulerStatus : undefined,
     };
   }
 
@@ -261,7 +268,7 @@ export class HealthService {
     if (!this.redisClient) {
       return {
         status: "warn",
-        message: "Redis client not configured (optional)"
+        message: "Redis client not configured (optional)",
       };
     }
 
@@ -273,38 +280,37 @@ export class HealthService {
         return {
           status: "warn", // Redis is optional, so warn instead of fail
           message: "Redis is not responding",
-          details: this.options.enableDetailedChecks ? (health as unknown as Record<string, unknown>) : undefined
+          details: this.options.enableDetailedChecks ? (health as unknown as Record<string, unknown>) : undefined,
         };
       }
 
       return {
         status: "pass",
         message: "Redis is responding",
-        details: this.options.enableDetailedChecks ? (health as unknown as Record<string, unknown>) : undefined
+        details: this.options.enableDetailedChecks ? (health as unknown as Record<string, unknown>) : undefined,
       };
-
     } catch (error) {
       return {
         status: "warn",
-        message: `Redis check failed: ${error instanceof Error ? error.message : String(error)}`
+        message: `Redis check failed: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
 
   private determineOverallStatus(checks: HealthStatus["checks"]): "healthy" | "degraded" | "unhealthy" {
     const checkValues = Object.values(checks);
-    
+
     // If any critical check fails, service is unhealthy
     const criticalChecks = [checks.snapshot, checks.adaptor, checks.ldapServer, checks.refreshScheduler];
-    const hasCriticalFailure = criticalChecks.some(check => check.status === "fail");
-    
+    const hasCriticalFailure = criticalChecks.some((check) => check.status === "fail");
+
     if (hasCriticalFailure) {
       return "unhealthy";
     }
 
     // If any check has warnings, service is degraded
-    const hasWarnings = checkValues.some(check => check.status === "warn");
-    
+    const hasWarnings = checkValues.some((check) => check.status === "warn");
+
     if (hasWarnings) {
       return "degraded";
     }
@@ -319,26 +325,27 @@ export class HealthService {
 
     try {
       const health = await this.getHealthStatus();
-      const statusCode = health.status === "healthy" ? 200 : 
-                        health.status === "degraded" ? 200 : 503;
+      const statusCode = health.status === "healthy" ? 200 : health.status === "degraded" ? 200 : 503;
 
       return new Response(JSON.stringify(health, null, 2), {
         status: statusCode,
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       });
-
     } catch (error) {
-      return new Response(JSON.stringify({
-        status: "unhealthy",
-        error: error instanceof Error ? error.message : String(error)
-      }), {
-        status: 503,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
+      return new Response(
+        JSON.stringify({
+          status: "unhealthy",
+          error: error instanceof Error ? error.message : String(error),
+        }),
+        {
+          status: 503,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
     }
   }
 
@@ -354,20 +361,22 @@ export class HealthService {
       return new Response(JSON.stringify(readiness, null, 2), {
         status: statusCode,
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       });
-
     } catch (error) {
-      return new Response(JSON.stringify({
-        ready: false,
-        message: `Readiness check failed: ${error instanceof Error ? error.message : String(error)}`
-      }), {
-        status: 503,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
+      return new Response(
+        JSON.stringify({
+          ready: false,
+          message: `Readiness check failed: ${error instanceof Error ? error.message : String(error)}`,
+        }),
+        {
+          status: 503,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
     }
   }
 
@@ -383,20 +392,22 @@ export class HealthService {
       return new Response(JSON.stringify(liveness, null, 2), {
         status: statusCode,
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       });
-
     } catch (error) {
-      return new Response(JSON.stringify({
-        alive: false,
-        message: `Liveness check failed: ${error instanceof Error ? error.message : String(error)}`
-      }), {
-        status: 503,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
+      return new Response(
+        JSON.stringify({
+          alive: false,
+          message: `Liveness check failed: ${error instanceof Error ? error.message : String(error)}`,
+        }),
+        {
+          status: 503,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
     }
   }
 }

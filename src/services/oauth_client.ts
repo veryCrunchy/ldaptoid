@@ -18,8 +18,8 @@ export interface OAuthConfig {
   baseUrl: string;
   clientId: string;
   clientSecret: string;
-  realm?: string;      // For Keycloak/Zitadel
-  tenant?: string;     // For Entra ID
+  realm?: string; // For Keycloak/Zitadel
+  tenant?: string; // For Entra ID
   organization?: string; // For Zitadel v2
 }
 
@@ -34,7 +34,7 @@ export class OAuth2Client {
   async getAccessToken(idpType: "keycloak" | "entra" | "zitadel", config: OAuthConfig): Promise<string> {
     const cacheKey = this.getCacheKey(idpType, config);
     const cached = this.tokenCache.get(cacheKey);
-    
+
     // Return cached token if still valid
     if (cached && cached.expiresAt > Date.now() + (this.bufferSeconds * 1000)) {
       return cached.token;
@@ -42,12 +42,12 @@ export class OAuth2Client {
 
     // Fetch new token
     const tokenResponse = await this.fetchToken(idpType, config);
-    
+
     // Cache the new token
     const cachedToken: CachedToken = {
       token: tokenResponse.access_token,
       expiresAt: Date.now() + (tokenResponse.expires_in * 1000),
-      scope: tokenResponse.scope
+      scope: tokenResponse.scope,
     };
     this.tokenCache.set(cacheKey, cachedToken);
 
@@ -79,21 +79,21 @@ export class OAuth2Client {
     }
 
     const tokenUrl = `${config.baseUrl}/realms/${config.realm}/protocol/openid-connect/token`;
-    
+
     const body = new URLSearchParams({
       grant_type: "client_credentials",
       client_id: config.clientId,
       client_secret: config.clientSecret,
-      scope: "openid profile email" // Standard Keycloak scopes
+      scope: "openid profile email", // Standard Keycloak scopes
     });
 
     const response = await fetch(tokenUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json"
+        "Accept": "application/json",
       },
-      body: body.toString()
+      body: body.toString(),
     });
 
     if (!response.ok) {
@@ -113,21 +113,21 @@ export class OAuth2Client {
     }
 
     const tokenUrl = `https://login.microsoftonline.com/${config.tenant}/oauth2/v2.0/token`;
-    
+
     const body = new URLSearchParams({
       grant_type: "client_credentials",
       client_id: config.clientId,
       client_secret: config.clientSecret,
-      scope: "https://graph.microsoft.com/.default" // Microsoft Graph API scope
+      scope: "https://graph.microsoft.com/.default", // Microsoft Graph API scope
     });
 
     const response = await fetch(tokenUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json"
+        "Accept": "application/json",
       },
-      body: body.toString()
+      body: body.toString(),
     });
 
     if (!response.ok) {
@@ -144,12 +144,12 @@ export class OAuth2Client {
   private async fetchZitadelToken(config: OAuthConfig): Promise<TokenResponse> {
     // Zitadel v2 uses the standard OAuth2 endpoint
     const tokenUrl = `${config.baseUrl}/oauth/v2/token`;
-    
+
     const body = new URLSearchParams({
       grant_type: "client_credentials",
       client_id: config.clientId,
       client_secret: config.clientSecret,
-      scope: "urn:zitadel:iam:org:projects:roles" // Zitadel v2 scope for user/group access
+      scope: "urn:zitadel:iam:org:projects:roles", // Zitadel v2 scope for user/group access
     });
 
     // Add organization scope if specified (for Zitadel v2 multi-org)
@@ -162,9 +162,9 @@ export class OAuth2Client {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         "Accept": "application/json",
-        "User-Agent": "ldaptoid/1.0"
+        "User-Agent": "ldaptoid/1.0",
       },
-      body: body.toString()
+      body: body.toString(),
     });
 
     if (!response.ok) {
@@ -199,7 +199,7 @@ export class OAuth2Client {
   getCacheStats(): { size: number; keys: string[] } {
     return {
       size: this.tokenCache.size,
-      keys: Array.from(this.tokenCache.keys())
+      keys: Array.from(this.tokenCache.keys()),
     };
   }
 

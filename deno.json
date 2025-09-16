@@ -6,11 +6,11 @@
   "license": "MIT",
   "keywords": ["ldap", "identity", "proxy", "keycloak", "zitadel", "entra"],
   "lock": false,
-  
+
   "exports": {
     ".": "./src/cli/main.ts"
   },
-  
+
   "tasks": {
     "start": "deno run --allow-net --allow-env src/cli/main.ts",
     "dev": "deno run --allow-net --allow-env --watch src/cli/main.ts",
@@ -24,13 +24,13 @@
     "docker:build": "docker build -t ldaptoid:latest .",
     "docker:run": "docker run --env-file .env -p 389:389 -p 9090:9090 -p 8080:8080 ldaptoid:latest"
   },
-  
+
   "imports": {
     "@std/cli": "jsr:@std/cli@^1.0.22",
     "@std/assert": "jsr:@std/assert@^1.0.2",
     "@std/testing": "jsr:@std/testing@^1.0.3"
   },
-  
+
   "compilerOptions": {
     "strict": true,
     "noImplicitAny": true,
@@ -40,7 +40,7 @@
     "noFallthroughCasesInSwitch": true,
     "useUnknownInCatchVariables": true
   },
-  
+
   "lint": {
     "rules": {
       "tags": ["recommended"],
@@ -52,7 +52,7 @@
       "bin/"
     ]
   },
-  
+
   "fmt": {
     "lineWidth": 120,
     "indentWidth": 2,
@@ -64,7 +64,7 @@
       "bin/"
     ]
   },
-  
+
   "test": {
     "include": [
       "src/**/*_test.ts",

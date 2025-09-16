@@ -42,7 +42,7 @@ export class RedisClient {
       database: options.database ?? 0,
       keyPrefix: options.keyPrefix ?? "ldaptoid:",
       connectTimeoutMs: options.connectTimeoutMs ?? 5000,
-      operationTimeoutMs: options.operationTimeoutMs ?? 3000
+      operationTimeoutMs: options.operationTimeoutMs ?? 3000,
     };
   }
 
@@ -50,7 +50,7 @@ export class RedisClient {
     try {
       const connectPromise = Deno.connect({
         hostname: this.options.host,
-        port: this.options.port
+        port: this.options.port,
       });
 
       // Add timeout to connection attempt
@@ -70,7 +70,6 @@ export class RedisClient {
       if (this.options.database !== 0) {
         await this.sendCommand(["SELECT", this.options.database.toString()]);
       }
-
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -84,7 +83,7 @@ export class RedisClient {
       } catch {
         // Ignore errors during quit
       }
-      
+
       this.connection.close();
       this.connection = undefined;
     }
@@ -99,10 +98,9 @@ export class RedisClient {
     try {
       const redisKey = this.options.keyPrefix + key;
       const value = JSON.stringify(mapping);
-      
+
       await this.sendCommand(["SET", redisKey, value]);
       this.operationCount++;
-
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -120,8 +118,8 @@ export class RedisClient {
       this.operationCount++;
 
       // Parse string response
-      const lines = response.split('\r\n');
-      if (lines.length > 0 && lines[0]?.startsWith('$')) {
+      const lines = response.split("\r\n");
+      if (lines.length > 0 && lines[0]?.startsWith("$")) {
         const length = parseInt(lines[0].substring(1));
         if (length === -1) return null; // Null value
         if (lines.length > 1 && lines[1] !== undefined) {
@@ -130,7 +128,6 @@ export class RedisClient {
       }
 
       return null;
-
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -148,8 +145,7 @@ export class RedisClient {
       this.operationCount++;
 
       // Parse integer response
-      return response.startsWith(':1');
-
+      return response.startsWith(":1");
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -167,10 +163,10 @@ export class RedisClient {
       this.operationCount++;
 
       const mappings = new Map<string, UidGidMapping>();
-      
+
       // Parse array response for keys
       const keys = this.parseArrayResponse(keysResponse);
-      
+
       if (keys.length === 0) {
         return mappings;
       }
@@ -197,7 +193,6 @@ export class RedisClient {
       }
 
       return mappings;
-
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -213,7 +208,6 @@ export class RedisClient {
       const response = await this.sendCommand(["PING"]);
       this.operationCount++;
       return response.includes("PONG");
-
     } catch (error) {
       this.handleError(error);
       return false;
@@ -226,7 +220,7 @@ export class RedisClient {
       lastError: this.lastError,
       lastErrorTime: this.lastErrorTime,
       operationCount: this.operationCount,
-      errorCount: this.errorCount
+      errorCount: this.errorCount,
     };
   }
 
@@ -250,9 +244,9 @@ export class RedisClient {
     // Read response with timeout
     const buffer = new Uint8Array(4096);
     const readPromise = this.connection.read(buffer);
-    
+
     const bytesRead = await Promise.race([readPromise, timeoutPromise]);
-    
+
     if (bytesRead === null) {
       throw new Error("Connection closed");
     }
@@ -269,10 +263,10 @@ export class RedisClient {
   }
 
   private parseArrayResponse(response: string): string[] {
-    const lines = response.split('\r\n');
+    const lines = response.split("\r\n");
     const results: string[] = [];
 
-    if (lines.length === 0 || !lines[0]?.startsWith('*')) {
+    if (lines.length === 0 || !lines[0]?.startsWith("*")) {
       return results;
     }
 
@@ -281,10 +275,10 @@ export class RedisClient {
 
     for (let i = 0; i < count && lineIndex < lines.length; i++) {
       const currentLine = lines[lineIndex];
-      if (currentLine?.startsWith('$')) {
+      if (currentLine?.startsWith("$")) {
         const length = parseInt(currentLine.substring(1));
         lineIndex++;
-        
+
         if (length >= 0 && lineIndex < lines.length) {
           const valueLine = lines[lineIndex];
           results.push(valueLine || "");
@@ -304,7 +298,7 @@ export class RedisClient {
     this.errorCount++;
     this.lastError = error instanceof Error ? error.message : String(error);
     this.lastErrorTime = Date.now();
-    
+
     // Mark as disconnected on connection errors
     if (this.lastError.includes("Connection") || this.lastError.includes("timeout")) {
       this.isConnected = false;

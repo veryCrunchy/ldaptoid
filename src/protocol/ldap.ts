@@ -84,9 +84,9 @@ export interface LDAPControl {
   controlValue?: Uint8Array;
 }
 
-export type LDAPProtocolOp = 
+export type LDAPProtocolOp =
   | BindRequest
-  | BindResponse  
+  | BindResponse
   | UnbindRequest
   | SearchRequest
   | SearchResultEntry
@@ -100,12 +100,12 @@ export interface BindRequest {
 }
 
 export interface SimpleAuthentication {
-  type: 'simple';
+  type: "simple";
   password: string;
 }
 
 export interface SaslAuthentication {
-  type: 'sasl';
+  type: "sasl";
   mechanism: string;
   credentials?: Uint8Array;
 }
@@ -155,9 +155,9 @@ export interface PartialAttribute {
 }
 
 // Filter definitions
-export type Filter = 
+export type Filter =
   | AndFilter
-  | OrFilter  
+  | OrFilter
   | NotFilter
   | EqualityMatchFilter
   | SubstringsFilter

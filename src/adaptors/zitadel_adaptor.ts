@@ -1,8 +1,8 @@
-// Zitadel adaptor implementation  
+// Zitadel adaptor implementation
 // Uses v2 resource-based API for users with fallback to management API for groups
 // Based on research.md decisions for v2 API prioritization
 
-import { Adaptor, RawUser, RawGroup } from "./types.ts";
+import { Adaptor, RawGroup, RawUser } from "./types.ts";
 
 export class ZitadelAdaptor implements Adaptor {
   private readonly baseUrl: string;
@@ -18,31 +18,31 @@ export class ZitadelAdaptor implements Adaptor {
   async fetchUsers(): Promise<RawUser[]> {
     // Use v2 resource-based API (preferred per research.md)
     const response = await fetch(`${this.baseUrl}/v2/users`, {
-      method: 'POST',
-      headers: { 
+      method: "POST",
+      headers: {
         Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-        ...(this.orgId && { 'x-zitadel-orgid': this.orgId })
+        "Content-Type": "application/json",
+        ...(this.orgId && { "x-zitadel-orgid": this.orgId }),
       },
       body: JSON.stringify({
         query: {
           limit: 1000,
-          asc: true
-        }
-      })
+          asc: true,
+        },
+      }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch users from Zitadel v2 API: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     return (data.result || []).map((u: any) => ({
       id: u.userId,
       username: u.details?.preferredUsername || u.userName || u.loginNames?.[0],
       email: u.contact?.email,
-      enabled: u.state === 'USER_STATE_ACTIVE',
-      displayName: u.profile?.displayName || u.profile?.givenName && u.profile?.familyName 
+      enabled: u.state === "USER_STATE_ACTIVE",
+      displayName: u.profile?.displayName || u.profile?.givenName && u.profile?.familyName
         ? `${u.profile.givenName} ${u.profile.familyName}`.trim()
         : u.userName,
     }));

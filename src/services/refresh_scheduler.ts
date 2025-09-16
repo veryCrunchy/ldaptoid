@@ -40,7 +40,7 @@ export class RefreshScheduler {
     adaptor: Adaptor,
     snapshotBuilder: SnapshotBuilder,
     options: RefreshSchedulerOptions,
-    metricsCollector?: MetricsCollector
+    metricsCollector?: MetricsCollector,
   ) {
     this.adaptor = adaptor;
     this.snapshotBuilder = snapshotBuilder;
@@ -73,7 +73,7 @@ export class RefreshScheduler {
 
   stop(): void {
     this.isRunning = false;
-    
+
     if (this.timeoutId !== undefined) {
       clearTimeout(this.timeoutId);
       this.timeoutId = undefined;
@@ -100,13 +100,13 @@ export class RefreshScheduler {
       consecutiveFailures: this.consecutiveFailures,
       currentBackoffMs: this.currentBackoffMs,
       hasSnapshot: this.currentSnapshot !== undefined,
-      lastRefreshTime: this.currentSnapshot ? Date.now() : undefined
+      lastRefreshTime: this.currentSnapshot ? Date.now() : undefined,
     };
   }
 
   private async performRefresh(): Promise<RefreshResult> {
     const startTime = Date.now();
-    
+
     try {
       console.log("Starting snapshot refresh...");
       const snapshot = await this.snapshotBuilder.buildSnapshot(this.adaptor);
@@ -123,7 +123,7 @@ export class RefreshScheduler {
           true,
           durationMs,
           snapshot.users.length,
-          snapshot.groups.length
+          snapshot.groups.length,
         );
       }
 
@@ -132,14 +132,15 @@ export class RefreshScheduler {
         this.onSnapshotUpdate(snapshot);
       }
 
-      console.log(`Snapshot refresh successful: ${snapshot.users.length} users, ${snapshot.groups.length} groups (${durationMs}ms)`);
+      console.log(
+        `Snapshot refresh successful: ${snapshot.users.length} users, ${snapshot.groups.length} groups (${durationMs}ms)`,
+      );
 
       return {
         success: true,
         snapshot,
-        durationMs
+        durationMs,
       };
-
     } catch (error) {
       const durationMs = Date.now() - startTime;
       this.consecutiveFailures++;
@@ -150,7 +151,7 @@ export class RefreshScheduler {
       } else {
         this.currentBackoffMs = Math.min(
           this.currentBackoffMs * this.backoffMultiplier,
-          this.maxBackoffMs
+          this.maxBackoffMs,
         );
       }
 
@@ -164,7 +165,7 @@ export class RefreshScheduler {
       return {
         success: false,
         error: error instanceof Error ? error : new Error(String(error)),
-        durationMs
+        durationMs,
       };
     }
   }
@@ -182,9 +183,7 @@ export class RefreshScheduler {
     }
 
     // Determine next refresh delay
-    const delay = this.consecutiveFailures > 0 
-      ? this.currentBackoffMs 
-      : this.refreshIntervalMs;
+    const delay = this.consecutiveFailures > 0 ? this.currentBackoffMs : this.refreshIntervalMs;
 
     console.log(`Scheduling next refresh in ${delay}ms`);
 

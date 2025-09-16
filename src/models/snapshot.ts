@@ -1,5 +1,5 @@
-import type { User } from './user.ts';
-import type { Group } from './group.ts';
+import type { User } from "./user.ts";
+import type { Group } from "./group.ts";
 
 export interface Snapshot {
   users: User[];

@@ -90,7 +90,7 @@ export class LDAPtoIDMain {
   async run(args: string[]): Promise<void> {
     try {
       const config = this.parseConfig(args);
-      
+
       // Handle help flag early
       if (config.help) {
         this.printHelp();
@@ -98,7 +98,7 @@ export class LDAPtoIDMain {
       }
 
       this.config = config;
-      
+
       if (config.verbose) {
         console.log("Starting LDAP-to-ID proxy with configuration:", config);
       }
@@ -114,7 +114,6 @@ export class LDAPtoIDMain {
 
       // Keep the process running
       await new Promise(() => {}); // This will run until process is terminated
-
     } catch (error) {
       console.error("Failed to start LDAP-to-ID proxy:", error);
       Deno.exit(1);
@@ -125,18 +124,37 @@ export class LDAPtoIDMain {
     const parsed = parseArgs(args, {
       boolean: ["help", "verbose", "allow-anonymous-bind", "redis-enabled"],
       string: [
-        "ldap-bind-dn", "ldap-bind-password", "ldap-base-dn",
-        "idp-type", "idp-base-url", "idp-client-id", "idp-client-secret",
-        "idp-realm", "idp-tenant", "idp-organization",
-        "redis-host", "redis-password", "enabled-features",
-        "ldap-port", "ldap-size-limit", "refresh-interval-ms", "max-backoff-ms", "max-retries",
-        "redis-port", "redis-database", "metrics-port", "health-port",
-        "metrics-path", "health-path", "readiness-path", "liveness-path"
+        "ldap-bind-dn",
+        "ldap-bind-password",
+        "ldap-base-dn",
+        "idp-type",
+        "idp-base-url",
+        "idp-client-id",
+        "idp-client-secret",
+        "idp-realm",
+        "idp-tenant",
+        "idp-organization",
+        "redis-host",
+        "redis-password",
+        "enabled-features",
+        "ldap-port",
+        "ldap-size-limit",
+        "refresh-interval-ms",
+        "max-backoff-ms",
+        "max-retries",
+        "redis-port",
+        "redis-database",
+        "metrics-port",
+        "health-port",
+        "metrics-path",
+        "health-path",
+        "readiness-path",
+        "liveness-path",
       ],
       alias: {
         h: "help",
         v: "verbose",
-        p: "ldap-port"
+        p: "ldap-port",
       },
       default: {
         "ldap-port": "389",
@@ -156,8 +174,8 @@ export class LDAPtoIDMain {
         "health-path": "/health",
         "readiness-path": "/ready",
         "liveness-path": "/live",
-        "enabled-features": ""
-      }
+        "enabled-features": "",
+      },
     });
 
     // Return early for help
@@ -168,9 +186,9 @@ export class LDAPtoIDMain {
     // Validate required config only if not showing help
     const requiredEnvVars = [
       "LDAPTOID_IDP_TYPE",
-      "LDAPTOID_IDP_BASE_URL", 
+      "LDAPTOID_IDP_BASE_URL",
       "LDAPTOID_IDP_CLIENT_ID",
-      "LDAPTOID_IDP_CLIENT_SECRET"
+      "LDAPTOID_IDP_CLIENT_SECRET",
     ];
 
     for (const envVar of requiredEnvVars) {
@@ -185,7 +203,8 @@ export class LDAPtoIDMain {
       ldapBindPassword: parsed["ldap-bind-password"] as string || Deno.env.get("LDAPTOID_LDAP_BIND_PASSWORD"),
       ldapBaseDN: parsed["ldap-base-dn"] as string || Deno.env.get("LDAPTOID_LDAP_BASE_DN") || "dc=example,dc=com",
       ldapSizeLimit: parseInt(parsed["ldap-size-limit"] as string),
-      allowAnonymousBind: parsed["allow-anonymous-bind"] as boolean || Deno.env.get("LDAPTOID_ALLOW_ANONYMOUS_BIND") === "true",
+      allowAnonymousBind: parsed["allow-anonymous-bind"] as boolean ||
+        Deno.env.get("LDAPTOID_ALLOW_ANONYMOUS_BIND") === "true",
 
       idpType: (parsed["idp-type"] as string || Deno.env.get("LDAPTOID_IDP_TYPE")) as "keycloak" | "entra" | "zitadel",
       idpBaseUrl: parsed["idp-base-url"] as string || Deno.env.get("LDAPTOID_IDP_BASE_URL")!,
@@ -203,7 +222,8 @@ export class LDAPtoIDMain {
       redisHost: parsed["redis-host"] as string || Deno.env.get("LDAPTOID_REDIS_HOST") || "localhost",
       redisPort: parseInt(parsed["redis-port"] as string) || parseInt(Deno.env.get("LDAPTOID_REDIS_PORT") || "6379"),
       redisPassword: parsed["redis-password"] as string || Deno.env.get("LDAPTOID_REDIS_PASSWORD"),
-      redisDatabase: parseInt(parsed["redis-database"] as string) || parseInt(Deno.env.get("LDAPTOID_REDIS_DATABASE") || "0"),
+      redisDatabase: parseInt(parsed["redis-database"] as string) ||
+        parseInt(Deno.env.get("LDAPTOID_REDIS_DATABASE") || "0"),
 
       metricsPort: parseInt(parsed["metrics-port"] as string),
       metricsPath: parsed["metrics-path"] as string,
@@ -213,10 +233,12 @@ export class LDAPtoIDMain {
       readinessPath: parsed["readiness-path"] as string,
       livenessPath: parsed["liveness-path"] as string,
 
-      enabledFeatures: (parsed["enabled-features"] as string || Deno.env.get("LDAPTOID_ENABLED_FEATURES") || "").split(",").filter(f => f.trim()),
+      enabledFeatures: (parsed["enabled-features"] as string || Deno.env.get("LDAPTOID_ENABLED_FEATURES") || "").split(
+        ",",
+      ).filter((f) => f.trim()),
 
       verbose: parsed.verbose as boolean || Deno.env.get("LDAPTOID_VERBOSE") === "true",
-      help: parsed.help as boolean
+      help: parsed.help as boolean,
     };
   }
 
@@ -235,7 +257,7 @@ export class LDAPtoIDMain {
     this.metricsService = new PrometheusMetricsService();
     // Convert feature flags to Record format for metrics
     const flagsRecord: Record<string, boolean> = {};
-    this.featureFlagService.getEnabledFlags().forEach(flag => {
+    this.featureFlagService.getEnabledFlags().forEach((flag) => {
       flagsRecord[flag] = true;
     });
     this.metricsService.updateFeatureFlags(flagsRecord);
@@ -250,7 +272,7 @@ export class LDAPtoIDMain {
         host: this.config.redisHost,
         port: this.config.redisPort,
         password: this.config.redisPassword,
-        database: this.config.redisDatabase
+        database: this.config.redisDatabase,
       });
 
       try {
@@ -271,19 +293,25 @@ export class LDAPtoIDMain {
     this.snapshotBuilder = new SnapshotBuilder({
       uidAllocator: this.uidAllocator,
       gidAllocator: this.gidAllocator,
-      enabledFeatures: this.featureFlagService.getEnabledFlags()
+      enabledFeatures: this.featureFlagService.getEnabledFlags(),
     });
 
     // Initialize search executor (will be updated with snapshot later)
     this.searchExecutor = new SearchExecutor(
-      { users: [], groups: [], generatedAt: new Date().toISOString(), sequence: 0, featureFlags: this.featureFlagService.getEnabledFlags() }
+      {
+        users: [],
+        groups: [],
+        generatedAt: new Date().toISOString(),
+        sequence: 0,
+        featureFlags: this.featureFlagService.getEnabledFlags(),
+      },
     );
 
     // Initialize bind authenticator
     this.bindAuthenticator = new BindAuthenticator({
       allowAnonymousBind: this.config.allowAnonymousBind,
       bindDN: this.config.ldapBindDN,
-      bindPassword: this.config.ldapBindPassword
+      bindPassword: this.config.ldapBindPassword,
     });
 
     // Initialize LDAP server
@@ -292,7 +320,7 @@ export class LDAPtoIDMain {
       bindDN: this.config.ldapBindDN,
       bindPassword: this.config.ldapBindPassword,
       baseDN: this.config.ldapBaseDN,
-      sizeLimit: this.config.ldapSizeLimit
+      sizeLimit: this.config.ldapSizeLimit,
     });
 
     // Initialize refresh scheduler
@@ -302,9 +330,9 @@ export class LDAPtoIDMain {
       {
         refreshIntervalMs: this.config.refreshIntervalMs,
         maxBackoffMs: this.config.maxBackoffMs,
-        maxRetries: this.config.maxRetries
+        maxRetries: this.config.maxRetries,
       },
-      this.metricsService
+      this.metricsService,
     );
 
     // Set up snapshot update callback
@@ -330,7 +358,7 @@ export class LDAPtoIDMain {
       clientSecret: this.config.idpClientSecret,
       realm: this.config.idpRealm,
       tenant: this.config.idpTenant,
-      organization: this.config.idpOrganization
+      organization: this.config.idpOrganization,
     };
 
     // Get OAuth2 access token
@@ -342,8 +370,8 @@ export class LDAPtoIDMain {
           throw new Error("Keycloak realm is required (set LDAPTOID_IDP_REALM)");
         }
         return new KeycloakAdaptor(
-          this.config.idpBaseUrl, 
-          accessToken
+          this.config.idpBaseUrl,
+          accessToken,
         );
 
       case "entra":
@@ -352,13 +380,13 @@ export class LDAPtoIDMain {
         }
         return new EntraAdaptor(
           this.config.idpBaseUrl,
-          accessToken
+          accessToken,
         );
 
       case "zitadel":
         return new ZitadelAdaptor(
           this.config.idpBaseUrl,
-          accessToken
+          accessToken,
         );
 
       default:
@@ -375,7 +403,7 @@ export class LDAPtoIDMain {
     await this.refreshScheduler.start();
 
     // Start LDAP server
-    this.ldapServer.start().catch(error => {
+    this.ldapServer.start().catch((error) => {
       console.error("LDAP server error:", error);
     });
 
@@ -388,7 +416,7 @@ export class LDAPtoIDMain {
           return this.metricsService.serveMetrics(request);
         }
         return new Response("Not Found", { status: 404 });
-      }
+      },
     );
 
     // Start health server
@@ -406,7 +434,7 @@ export class LDAPtoIDMain {
           default:
             return new Response("Not Found", { status: 404 });
         }
-      }
+      },
     );
   }
 
@@ -415,14 +443,14 @@ export class LDAPtoIDMain {
       if (this.isShuttingDown) {
         return;
       }
-      
+
       this.isShuttingDown = true;
       console.log("\n🛑 Shutting down gracefully...");
 
       try {
         // Stop accepting new connections
         this.ldapServer?.stop();
-        
+
         // Stop refresh scheduler
         this.refreshScheduler?.stop();
 
@@ -435,14 +463,13 @@ export class LDAPtoIDMain {
         if (this.metricsServer) {
           await this.metricsServer.shutdown();
         }
-        
+
         if (this.healthServer) {
           await this.healthServer.shutdown();
         }
 
         console.log("✅ Graceful shutdown complete");
         Deno.exit(0);
-
       } catch (error) {
         console.error("Error during shutdown:", error);
         Deno.exit(1);
@@ -452,7 +479,7 @@ export class LDAPtoIDMain {
     // Handle various termination signals
     Deno.addSignalListener("SIGTERM", shutdown);
     Deno.addSignalListener("SIGINT", shutdown);
-    
+
     // Handle unhandled rejections
     addEventListener("unhandledrejection", (event) => {
       console.error("Unhandled promise rejection:", event.reason);

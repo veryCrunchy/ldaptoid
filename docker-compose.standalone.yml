@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # LDAP-to-ID Proxy - Standalone Configuration
@@ -7,40 +7,40 @@ services:
     container_name: ldaptoid
     restart: unless-stopped
     ports:
-      - "389:389"   # LDAP port
+      - "389:389" # LDAP port
       - "8080:8080" # Health check port
       - "9090:9090" # Metrics port
     environment:
       # Required IdP configuration - CONFIGURE THESE BEFORE RUNNING
-      LDAPTOID_IDP_TYPE: "zitadel"  # Change to: keycloak|entra|zitadel
-      LDAPTOID_IDP_BASE_URL: "https://your-idp.example.com"  # Change to your IdP URL
-      LDAPTOID_IDP_CLIENT_ID: "your-client-id"  # Change to your client ID
-      LDAPTOID_IDP_CLIENT_SECRET: "your-client-secret"  # Change to your client secret
-      
+      LDAPTOID_IDP_TYPE: "zitadel" # Change to: keycloak|entra|zitadel
+      LDAPTOID_IDP_BASE_URL: "https://your-idp.example.com" # Change to your IdP URL
+      LDAPTOID_IDP_CLIENT_ID: "your-client-id" # Change to your client ID
+      LDAPTOID_IDP_CLIENT_SECRET: "your-client-secret" # Change to your client secret
+
       # IdP-specific configuration (uncomment and configure as needed)
       # LDAPTOID_IDP_REALM: "your-realm"  # For Keycloak
       # LDAPTOID_IDP_TENANT: "your-tenant-id"  # For Entra ID
       # LDAPTOID_IDP_ORGANIZATION: "your-org-id"  # For Zitadel v2
-      
+
       # LDAP configuration - sensible defaults
       LDAPTOID_LDAP_BASE_DN: "dc=company,dc=com"
       LDAPTOID_ALLOW_ANONYMOUS_BIND: "true"
-      
+
       # Redis configuration - using included Redis service
       LDAPTOID_REDIS_ENABLED: "true"
       LDAPTOID_REDIS_HOST: "redis"
       LDAPTOID_REDIS_PORT: "6379"
       LDAPTOID_REDIS_PASSWORD: "ldaptoid-redis-secret"
       LDAPTOID_REDIS_DATABASE: "0"
-      
+
       # Feature flags - enabled for production use
       LDAPTOID_ENABLED_FEATURES: "synthetic_primary_group,mirror_nested_groups"
-      
+
       # Operational settings
       LDAPTOID_VERBOSE: "false"
       LDAPTOID_LOG_LEVEL: "INFO"
-      LDAPTOID_REFRESH_INTERVAL_MS: "300000"  # 5 minutes
-      
+      LDAPTOID_REFRESH_INTERVAL_MS: "300000" # 5 minutes
+
       # Metrics and monitoring
       LDAPTOID_METRICS_ENABLED: "true"
       LDAPTOID_HEALTH_CHECK_ENABLED: "true"
@@ -94,13 +94,13 @@ services:
     ports:
       - "9091:9090"
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=15d'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
     volumes:
       - prometheus-data:/prometheus
       - prometheus-config:/etc/prometheus

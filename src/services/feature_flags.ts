@@ -23,16 +23,16 @@ export class DefaultFeatureFlagService implements FeatureFlagService {
 
   listFlags(): Array<{ name: FeatureFlag; enabled: boolean; description: string }> {
     const descriptions: Record<FeatureFlag, string> = {
-      'synthetic_primary_group': 'Create synthetic primary groups for each user',
-      'mirror_nested_groups': 'Mirror nested group relationships in LDAP structure'
+      "synthetic_primary_group": "Create synthetic primary groups for each user",
+      "mirror_nested_groups": "Mirror nested group relationships in LDAP structure",
     };
 
-    const allFlags: FeatureFlag[] = ['synthetic_primary_group', 'mirror_nested_groups'];
-    
-    return allFlags.map(flag => ({
+    const allFlags: FeatureFlag[] = ["synthetic_primary_group", "mirror_nested_groups"];
+
+    return allFlags.map((flag) => ({
       name: flag,
       enabled: this.enabledFlags.has(flag),
-      description: descriptions[flag]
+      description: descriptions[flag],
     }));
   }
 
@@ -42,9 +42,9 @@ export class DefaultFeatureFlagService implements FeatureFlagService {
 
   /** Get feature flag states for metrics export */
   getMetricsLabels(): Array<{ flag: string; enabled: string }> {
-    return this.listFlags().map(f => ({
+    return this.listFlags().map((f) => ({
       flag: f.name,
-      enabled: f.enabled.toString()
+      enabled: f.enabled.toString(),
     }));
   }
 }

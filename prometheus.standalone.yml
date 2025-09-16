@@ -3,31 +3,31 @@ global:
   evaluation_interval: 15s
 
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+# - "first_rules.yml"
+# - "second_rules.yml"
 
 scrape_configs:
   # LDAP-to-ID Proxy metrics
-  - job_name: 'ldaptoid'
+  - job_name: "ldaptoid"
     static_configs:
-      - targets: ['ldaptoid:9090']
+      - targets: ["ldaptoid:9090"]
     scrape_interval: 15s
-    metrics_path: '/metrics'
+    metrics_path: "/metrics"
 
   # Redis metrics via redis_exporter
-  - job_name: 'redis'
+  - job_name: "redis"
     static_configs:
-      - targets: ['redis-exporter:9121']
+      - targets: ["redis-exporter:9121"]
     scrape_interval: 15s
 
   # Prometheus self-monitoring
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
 
   # Optional: Add Grafana metrics
-  - job_name: 'grafana'
+  - job_name: "grafana"
     static_configs:
-      - targets: ['grafana:3000']
-    metrics_path: '/metrics'
+      - targets: ["grafana:3000"]
+    metrics_path: "/metrics"
     scrape_interval: 30s

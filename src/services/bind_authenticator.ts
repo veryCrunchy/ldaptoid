@@ -40,13 +40,13 @@ export class BindAuthenticator {
           success: true,
           resultCode: LDAPResultCode.Success,
           matchedDN: "",
-          diagnosticMessage: "Anonymous bind successful"
+          diagnosticMessage: "Anonymous bind successful",
         };
       } else {
         return {
           success: false,
           resultCode: LDAPResultCode.InsufficientAccessRights,
-          diagnosticMessage: "Anonymous bind not allowed"
+          diagnosticMessage: "Anonymous bind not allowed",
         };
       }
     }
@@ -56,7 +56,7 @@ export class BindAuthenticator {
       return {
         success: false,
         resultCode: LDAPResultCode.InvalidCredentials,
-        diagnosticMessage: "Simple bind requires password"
+        diagnosticMessage: "Simple bind requires password",
       };
     }
 
@@ -67,13 +67,13 @@ export class BindAuthenticator {
           success: true,
           resultCode: LDAPResultCode.Success,
           matchedDN: credentials.dn,
-          diagnosticMessage: "Bind successful"
+          diagnosticMessage: "Bind successful",
         };
       } else {
         return {
           success: false,
           resultCode: LDAPResultCode.InvalidCredentials,
-          diagnosticMessage: "Invalid credentials"
+          diagnosticMessage: "Invalid credentials",
         };
       }
     }
@@ -82,22 +82,22 @@ export class BindAuthenticator {
     return {
       success: false,
       resultCode: LDAPResultCode.InvalidCredentials,
-      diagnosticMessage: "Authentication not configured"
+      diagnosticMessage: "Authentication not configured",
     };
   }
 
   validateDN(dn: string): boolean {
     // Basic DN validation - check for basic LDAP DN format
     if (dn === "") return true; // Empty DN is valid for anonymous
-    
-    // Simple validation: should contain at least one component with = 
-    const components = dn.split(',').map(c => c.trim());
+
+    // Simple validation: should contain at least one component with =
+    const components = dn.split(",").map((c) => c.trim());
     for (const component of components) {
-      if (!component.includes('=') || component.startsWith('=') || component.endsWith('=')) {
+      if (!component.includes("=") || component.startsWith("=") || component.endsWith("=")) {
         return false;
       }
     }
-    
+
     return true;
   }
 

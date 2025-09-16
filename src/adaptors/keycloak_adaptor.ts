@@ -1,7 +1,7 @@
 // Keycloak adaptor implementation
 // Fetches users and groups from Keycloak REST API
 
-import { Adaptor, RawUser, RawGroup } from "./types.ts";
+import { Adaptor, RawGroup, RawUser } from "./types.ts";
 
 export class KeycloakAdaptor implements Adaptor {
   private readonly baseUrl: string;

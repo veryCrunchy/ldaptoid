@@ -5,6 +5,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 ## Pre-Deployment
 
 ### ✅ Configuration
+
 - [ ] `.env` file configured with all required variables
 - [ ] IdP client credentials tested and working
 - [ ] LDAP base DN matches your organization structure
@@ -13,6 +14,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 - [ ] Log level appropriate for production (INFO or WARN)
 
 ### ✅ Security
+
 - [ ] Client secrets stored securely (not in source control)
 - [ ] Network access restricted appropriately
 - [ ] HTTPS endpoints configured for external access
@@ -20,6 +22,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 - [ ] Security scanning passed in CI/CD
 
 ### ✅ Identity Provider Setup
+
 - [ ] OAuth2 application configured correctly
 - [ ] Required permissions granted (User.Read, Group.Read)
 - [ ] Service account roles assigned (if applicable)
@@ -29,6 +32,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 ## Deployment
 
 ### ✅ Infrastructure
+
 - [ ] Docker and Docker Compose installed
 - [ ] System resources meet minimum requirements (2 CPU, 4GB RAM)
 - [ ] Persistent storage configured for Redis
@@ -36,6 +40,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 - [ ] Log rotation configured
 
 ### ✅ Networking
+
 - [ ] LDAP port (389) accessible to clients
 - [ ] Health check port (8080) accessible for monitoring
 - [ ] Metrics port (9090) secured appropriately
@@ -43,6 +48,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 - [ ] Firewall rules configured
 
 ### ✅ Monitoring
+
 - [ ] Prometheus metrics collection working
 - [ ] Grafana dashboards configured
 - [ ] Health check endpoints responding
@@ -52,6 +58,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 ## Post-Deployment
 
 ### ✅ Functional Testing
+
 - [ ] LDAP bind authentication working
 - [ ] User search returns expected results
 - [ ] Group membership correctly reflected
@@ -59,6 +66,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 - [ ] Primary group synthesis working (if enabled)
 
 ### ✅ Performance Testing
+
 - [ ] Response times acceptable under expected load
 - [ ] Memory usage stable over time
 - [ ] OAuth2 token refresh working automatically
@@ -66,6 +74,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 - [ ] No memory leaks detected
 
 ### ✅ Operational Readiness
+
 - [ ] Deployment automation tested
 - [ ] Backup and recovery procedures validated
 - [ ] Monitoring alerts configured and tested
@@ -75,6 +84,7 @@ Use this checklist to verify your LDAP-to-ID proxy deployment is ready for produ
 ## Production Verification Commands
 
 ### Test OAuth2 Authentication
+
 ```bash
 # This should be automated in the deployment
 curl -X POST "${LDAPTOID_IDP_BASE_URL}/oauth/token" \
@@ -85,6 +95,7 @@ curl -X POST "${LDAPTOID_IDP_BASE_URL}/oauth/token" \
 ```
 
 ### Test LDAP Functionality
+
 ```bash
 # Test anonymous bind
 ldapsearch -H ldap://localhost:389 -x -b "${LDAPTOID_LDAP_BASE_DN}" "(objectclass=*)" | head -20
@@ -97,6 +108,7 @@ ldapsearch -H ldap://localhost:389 -x -b "${LDAPTOID_LDAP_BASE_DN}" "(objectclas
 ```
 
 ### Verify Health and Metrics
+
 ```bash
 # Health endpoints
 curl http://localhost:8080/health | jq
@@ -108,6 +120,7 @@ curl http://localhost:9090/metrics | grep ldaptoid_ | head -10
 ```
 
 ### Load Testing (Optional)
+
 ```bash
 # Install ldap-utils for testing
 sudo apt-get install ldap-utils
@@ -125,6 +138,7 @@ curl http://localhost:9090/metrics | grep ldaptoid_ldap_requests_total
 ## Troubleshooting Checklist
 
 ### ✅ Common Issues
+
 - [ ] IdP connectivity verified
 - [ ] DNS resolution working for IdP endpoints
 - [ ] Client credentials valid and not expired
@@ -134,6 +148,7 @@ curl http://localhost:9090/metrics | grep ldaptoid_ldap_requests_total
 - [ ] No port conflicts on 389, 8080, 9090
 
 ### ✅ Debug Mode
+
 ```bash
 # Enable debug logging
 LDAPTOID_LOG_LEVEL=DEBUG
@@ -159,17 +174,20 @@ Record these metrics after successful deployment:
 ## Sign-Off
 
 ### Technical Review
+
 - [ ] Infrastructure team approval
 - [ ] Security team approval
 - [ ] Application team approval
 
 ### Business Review
+
 - [ ] Functional requirements validated
 - [ ] Performance requirements met
 - [ ] Security requirements satisfied
 - [ ] Operational procedures documented
 
 ### Final Approval
+
 - [ ] Go-live approval granted
 - [ ] Rollback plan prepared
 - [ ] Support team notified
@@ -183,4 +201,4 @@ Record these metrics after successful deployment:
 
 ---
 
-*This checklist should be completed and signed off before production deployment.*
+_This checklist should be completed and signed off before production deployment._

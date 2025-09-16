@@ -11,25 +11,25 @@ const FNV_OFFSET = 0xcbf29ce484222325n;
 const FNV_PRIME = 0x100000001b3n;
 
 export interface AllocationResult {
-  id: number;            // Positive integer (truncated 31-bit safe)
-  hashed: boolean;       // True if derived from hash path, false if sequential fallback
-  collisionCount: number;// Number of collisions encountered before success
+  id: number; // Positive integer (truncated 31-bit safe)
+  hashed: boolean; // True if derived from hash path, false if sequential fallback
+  collisionCount: number; // Number of collisions encountered before success
 }
 
 export interface IdAllocatorOptions {
-  salt: string;                  // Salt mixed into hash to reduce collision risk between deployments
-  retryLimit?: number;           // Number of rehash attempts with salt variations (default 4)
-  floor?: number;                // Minimum allocated ID value (default 10000 to avoid reserved system IDs)
-  ceiling?: number;              // Optional max; if reached sequential fallback will wrap or error
-  sequentialStart?: number;      // Starting value for sequential fallback (default floor + 1)
+  salt: string; // Salt mixed into hash to reduce collision risk between deployments
+  retryLimit?: number; // Number of rehash attempts with salt variations (default 4)
+  floor?: number; // Minimum allocated ID value (default 10000 to avoid reserved system IDs)
+  ceiling?: number; // Optional max; if reached sequential fallback will wrap or error
+  sequentialStart?: number; // Starting value for sequential fallback (default floor + 1)
 }
 
 interface InternalState {
-  byKey: Map<string, number>;    // key -> id mapping
-  byId: Map<number, string>;     // id -> key reverse mapping for collision detection
-  nextSeq: number;               // next sequential candidate
-  collisions: number;            // total collisions encountered (metrics hook)
-  fallbacks: number;             // total sequential fallback allocations
+  byKey: Map<string, number>; // key -> id mapping
+  byId: Map<number, string>; // id -> key reverse mapping for collision detection
+  nextSeq: number; // next sequential candidate
+  collisions: number; // total collisions encountered (metrics hook)
+  fallbacks: number; // total sequential fallback allocations
 }
 
 export class IdAllocator {
@@ -142,7 +142,7 @@ export class IdAllocator {
       hash = BigInt.asUintN(64, hash * FNV_PRIME);
     }
     // Fold to 31-bit signed-safe positive integer space
-  const lower = Number(hash & 0x7fffffffn); // mask to 31 bits positive
+    const lower = Number(hash & 0x7fffffffn); // mask to 31 bits positive
     return lower;
   }
 }

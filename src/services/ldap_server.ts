@@ -1,18 +1,18 @@
 // LDAP Server Implementation
 // TCP server handling LDAP protocol requests with read-only operations
 
-import { 
-  LDAPMessage, 
-  LDAPMessageType, 
-  LDAPResultCode,
-  BindRequest, 
+import {
+  BindRequest,
   BindResponse,
-  SearchRequest,
-  SearchResultEntry,
-  SearchResultDone as _SearchResultDone,
-  UnbindRequest as _UnbindRequest,
+  LDAP_PORT,
   LDAPCodec,
-  LDAP_PORT
+  LDAPMessage,
+  LDAPMessageType,
+  LDAPResultCode,
+  SearchRequest,
+  SearchResultDone as _SearchResultDone,
+  SearchResultEntry,
+  UnbindRequest as _UnbindRequest,
 } from "../protocol/ldap.ts";
 import { Snapshot } from "../models/mod.ts";
 
@@ -46,7 +46,7 @@ export class LDAPServer {
     console.log(`LDAP server listening on port ${this.port}`);
 
     for await (const conn of this.server) {
-      this.handleConnection(conn).catch(err => {
+      this.handleConnection(conn).catch((err) => {
         console.error("Connection error:", err);
       });
     }
@@ -83,7 +83,7 @@ export class LDAPServer {
             authenticated = bindResult.resultCode === LDAPResultCode.Success;
             response = {
               messageID: message.messageID,
-              protocolOp: bindResult
+              protocolOp: bindResult,
             };
             break;
           }
@@ -96,8 +96,8 @@ export class LDAPServer {
                   type: LDAPMessageType.SearchResultDone,
                   resultCode: LDAPResultCode.InsufficientAccessRights,
                   matchedDN: "",
-                  diagnosticMessage: "Authentication required"
-                }
+                  diagnosticMessage: "Authentication required",
+                },
               };
             } else {
               // For search requests, we need to send multiple messages
@@ -119,8 +119,8 @@ export class LDAPServer {
                 type: LDAPMessageType.SearchResultDone,
                 resultCode: LDAPResultCode.ProtocolError,
                 matchedDN: "",
-                diagnosticMessage: "Unsupported operation"
-              }
+                diagnosticMessage: "Unsupported operation",
+              },
             };
           }
         }
@@ -140,20 +140,20 @@ export class LDAPServer {
         type: LDAPMessageType.BindResponse,
         resultCode: LDAPResultCode.Success,
         matchedDN: "",
-        diagnosticMessage: "Anonymous bind successful"
+        diagnosticMessage: "Anonymous bind successful",
       };
     }
 
     // Check credentials if configured
-    if (request.authentication.type === 'simple') {
-      const valid = request.name === this.bindDN && 
-                   request.authentication.password === this.bindPassword;
-      
+    if (request.authentication.type === "simple") {
+      const valid = request.name === this.bindDN &&
+        request.authentication.password === this.bindPassword;
+
       return {
         type: LDAPMessageType.BindResponse,
         resultCode: valid ? LDAPResultCode.Success : LDAPResultCode.InvalidCredentials,
         matchedDN: valid ? request.name : "",
-        diagnosticMessage: valid ? "Bind successful" : "Invalid credentials"
+        diagnosticMessage: valid ? "Bind successful" : "Invalid credentials",
       };
     }
 
@@ -161,7 +161,7 @@ export class LDAPServer {
       type: LDAPMessageType.BindResponse,
       resultCode: LDAPResultCode.AuthMethodNotSupported,
       matchedDN: "",
-      diagnosticMessage: "Only simple authentication supported"
+      diagnosticMessage: "Only simple authentication supported",
     };
   }
 
@@ -173,8 +173,8 @@ export class LDAPServer {
           type: LDAPMessageType.SearchResultDone,
           resultCode: LDAPResultCode.Unavailable,
           matchedDN: "",
-          diagnosticMessage: "No directory snapshot available"
-        }
+          diagnosticMessage: "No directory snapshot available",
+        },
       };
       await conn.write(LDAPCodec.encode(errorResponse));
       return;
@@ -197,8 +197,8 @@ export class LDAPServer {
           { type: "objectClass", vals: ["top", "rootDSE"] },
           { type: "namingContexts", vals: [this.baseDN] },
           { type: "supportedLDAPVersion", vals: ["3"] },
-          { type: "supportedExtension", vals: [] }
-        ]
+          { type: "supportedExtension", vals: [] },
+        ],
       });
     }
 
@@ -207,10 +207,10 @@ export class LDAPServer {
       if (entryCount >= this.sizeLimit) {
         break;
       }
-      
+
       const entryMessage: LDAPMessage = {
         messageID,
-        protocolOp: entry
+        protocolOp: entry,
       };
       await conn.write(LDAPCodec.encode(entryMessage));
       entryCount++;
@@ -223,8 +223,8 @@ export class LDAPServer {
         type: LDAPMessageType.SearchResultDone,
         resultCode: entryCount >= this.sizeLimit ? LDAPResultCode.SizeLimitExceeded : LDAPResultCode.Success,
         matchedDN: "",
-        diagnosticMessage: entryCount >= this.sizeLimit ? "Size limit exceeded" : "Search completed"
-      }
+        diagnosticMessage: entryCount >= this.sizeLimit ? "Size limit exceeded" : "Search completed",
+      },
     };
     await conn.write(LDAPCodec.encode(doneResponse));
   }

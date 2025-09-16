@@ -1,7 +1,7 @@
 // Entra adaptor implementation
 // Fetches users and groups from Microsoft Entra (Azure AD) Graph API
 
-import { Adaptor, RawUser, RawGroup } from "./types.ts";
+import { Adaptor, RawGroup, RawUser } from "./types.ts";
 
 export class EntraAdaptor implements Adaptor {
   private readonly baseUrl: string;

@@ -5,18 +5,21 @@
 Your LDAP-to-ID proxy now includes **three deployment options**:
 
 ### 1. **Standalone Docker Compose** (New! 🆕)
+
 - **File**: `docker-compose.standalone.yml`
 - **Use Case**: Zero-configuration deployment with sensible defaults
 - **Features**: Complete stack with monitoring, no setup script required
 - **Perfect For**: Quick testing, demos, and simple production deployments
 
-### 2. **Production Docker Compose** 
+### 2. **Production Docker Compose**
+
 - **File**: `docker-compose.yml` + `scripts/deploy.sh`
 - **Use Case**: Full production deployment with validation and health checks
 - **Features**: Environment validation, health monitoring, advanced configuration
 - **Perfect For**: Enterprise production environments
 
 ### 3. **Manual Configuration**
+
 - **Files**: Individual Docker commands or Kubernetes manifests
 - **Use Case**: Custom deployment scenarios and advanced orchestration
 - **Perfect For**: Integration with existing infrastructure
@@ -24,6 +27,7 @@ Your LDAP-to-ID proxy now includes **three deployment options**:
 ## 🚀 Quick Start Options
 
 ### Option A: Fully Automated (Recommended)
+
 ```bash
 # Interactive configuration and deployment
 ./setup-standalone.sh
@@ -33,6 +37,7 @@ Your LDAP-to-ID proxy now includes **three deployment options**:
 ```
 
 ### Option B: Manual Configuration
+
 ```bash
 # 1. Edit docker-compose.standalone.yml
 # Update the IdP configuration section:
@@ -49,6 +54,7 @@ curl http://localhost:8080/health
 ```
 
 ### Option C: Using Deno Tasks
+
 ```bash
 # Configure docker-compose.standalone.yml first, then:
 deno task docker:standalone        # Deploy
@@ -83,30 +89,32 @@ deno task docker:standalone:down   # Stop
 
 The standalone deployment includes production-ready defaults:
 
-| Component | Configuration | Value |
-|-----------|---------------|-------|
-| **LDAP** | Base DN | `dc=company,dc=com` |
-| | Anonymous Bind | Enabled |
-| | Ports | 389 (LDAP), 8080 (Health), 9090 (Metrics) |
-| **Redis** | Memory Limit | 256MB |
-| | Persistence | Enabled (RDB + AOF) |
-| | Password | `ldaptoid-redis-secret` |
-| **Features** | Primary Groups | Enabled |
-| | Nested Groups | Enabled |
-| **Monitoring** | Prometheus | Port 9091 |
-| | Grafana | Port 3000 (admin/admin) |
-| **Logging** | Level | INFO |
-| | Format | Structured JSON |
+| Component      | Configuration  | Value                                     |
+| -------------- | -------------- | ----------------------------------------- |
+| **LDAP**       | Base DN        | `dc=company,dc=com`                       |
+|                | Anonymous Bind | Enabled                                   |
+|                | Ports          | 389 (LDAP), 8080 (Health), 9090 (Metrics) |
+| **Redis**      | Memory Limit   | 256MB                                     |
+|                | Persistence    | Enabled (RDB + AOF)                       |
+|                | Password       | `ldaptoid-redis-secret`                   |
+| **Features**   | Primary Groups | Enabled                                   |
+|                | Nested Groups  | Enabled                                   |
+| **Monitoring** | Prometheus     | Port 9091                                 |
+|                | Grafana        | Port 3000 (admin/admin)                   |
+| **Logging**    | Level          | INFO                                      |
+|                | Format         | Structured JSON                           |
 
 ## 📊 Monitoring & Health Checks
 
 ### Health Endpoints
+
 - **Main Health**: http://localhost:8080/health
-- **Liveness**: http://localhost:8080/live  
+- **Liveness**: http://localhost:8080/live
 - **Readiness**: http://localhost:8080/ready
 - **Metrics**: http://localhost:9090/metrics
 
 ### Dashboards
+
 - **Grafana**: http://localhost:3000 (admin/admin)
   - Auto-configured Prometheus datasource
   - Pre-configured dashboards for LDAP and Redis metrics
@@ -114,8 +122,9 @@ The standalone deployment includes production-ready defaults:
   - Raw metrics and query interface
 
 ### Key Metrics Monitored
+
 - LDAP connection count and response times
-- User/group snapshot size and refresh duration  
+- User/group snapshot size and refresh duration
 - Redis performance and memory usage
 - OAuth2 token refresh status
 - Error rates and health status
@@ -123,14 +132,16 @@ The standalone deployment includes production-ready defaults:
 ## 🔐 Security Features
 
 ### Built-in Security
+
 - **Container Security**: Distroless images, non-root execution
 - **Network Isolation**: Internal Docker network with minimal port exposure
 - **Secret Management**: Redis password, configurable Grafana password
 - **Structured Logging**: Security-aware with sensitive data redaction
 
 ### Production Security Checklist
+
 - [ ] Change default Redis password
-- [ ] Change default Grafana password  
+- [ ] Change default Grafana password
 - [ ] Configure SSL/TLS termination
 - [ ] Restrict network access to necessary ports
 - [ ] Set up log aggregation and monitoring
@@ -161,6 +172,7 @@ docker volume ls | grep ldaptoid                          # List data volumes
 ## 🧪 Testing & Validation
 
 ### Basic LDAP Testing
+
 ```bash
 # Test anonymous search
 ldapsearch -H ldap://localhost:389 -x -b "dc=company,dc=com" "(objectclass=*)"
@@ -173,6 +185,7 @@ ldapsearch -H ldap://localhost:389 -x -b "dc=company,dc=com" "(objectclass=group
 ```
 
 ### Health Validation
+
 ```bash
 # Comprehensive health check
 curl -s http://localhost:8080/health | jq
@@ -185,6 +198,7 @@ curl -s http://localhost:9090/metrics | grep ldaptoid_ | head -5
 ```
 
 ### Application Integration Testing
+
 ```bash
 # Python LDAP example
 python3 -c "
@@ -200,16 +214,17 @@ print(f'Found {len(conn.entries)} entries')
 
 The standalone deployment is **production-ready** and includes:
 
-✅ **Enterprise Authentication** - OAuth2 with all major IdPs  
-✅ **High Availability** - Health checks and restart policies  
-✅ **Monitoring Stack** - Prometheus + Grafana with dashboards  
-✅ **Data Persistence** - Redis with backup strategies  
-✅ **Security Hardening** - Container security and secret management  
-✅ **Operational Tools** - Logging, metrics, and management commands  
+✅ **Enterprise Authentication** - OAuth2 with all major IdPs\
+✅ **High Availability** - Health checks and restart policies\
+✅ **Monitoring Stack** - Prometheus + Grafana with dashboards\
+✅ **Data Persistence** - Redis with backup strategies\
+✅ **Security Hardening** - Container security and secret management\
+✅ **Operational Tools** - Logging, metrics, and management commands
 
 ### Scaling Considerations
+
 - **Horizontal**: Deploy multiple replicas behind a load balancer
-- **Vertical**: Increase memory limits for larger user datasets  
+- **Vertical**: Increase memory limits for larger user datasets
 - **High Availability**: Use Redis Cluster and container orchestration
 - **Monitoring**: Extend with additional observability tools
 

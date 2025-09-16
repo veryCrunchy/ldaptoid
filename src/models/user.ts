@@ -13,5 +13,5 @@ export interface User {
 
 export function sanitizeUsername(raw: string): string {
   // Replace spaces with underscore and remove disallowed LDAP specials (basic pass)
-  return raw.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+  return raw.trim().replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
 }

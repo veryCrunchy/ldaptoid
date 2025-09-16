@@ -10,13 +10,14 @@ Edit `docker-compose.standalone.yml` and update these environment variables:
 
 ```yaml
 # Required IdP configuration - CONFIGURE THESE BEFORE RUNNING
-LDAPTOID_IDP_TYPE: "zitadel"  # Change to: keycloak|entra|zitadel
-LDAPTOID_IDP_BASE_URL: "https://your-idp.example.com"  # Change to your IdP URL
-LDAPTOID_IDP_CLIENT_ID: "your-client-id"  # Change to your client ID
-LDAPTOID_IDP_CLIENT_SECRET: "your-client-secret"  # Change to your client secret
+LDAPTOID_IDP_TYPE: "zitadel" # Change to: keycloak|entra|zitadel
+LDAPTOID_IDP_BASE_URL: "https://your-idp.example.com" # Change to your IdP URL
+LDAPTOID_IDP_CLIENT_ID: "your-client-id" # Change to your client ID
+LDAPTOID_IDP_CLIENT_SECRET: "your-client-secret" # Change to your client secret
 ```
 
 For IdP-specific configuration, uncomment and configure:
+
 - **Keycloak**: `LDAPTOID_IDP_REALM`
 - **Entra ID**: `LDAPTOID_IDP_TENANT`
 - **Zitadel v2**: `LDAPTOID_IDP_ORGANIZATION`
@@ -89,17 +90,20 @@ docker-compose -f docker-compose.standalone.yml up -d
 ## Monitoring & Metrics
 
 ### Grafana Dashboard
+
 - URL: http://localhost:3000
 - Login: admin/admin
 - Prometheus datasource auto-configured
 
 ### Key Metrics
+
 - LDAP connection count and response times
 - User/group snapshot size and refresh duration
 - Redis performance and memory usage
 - Error rates and health status
 
 ### Health Endpoints
+
 - **Service Health**: http://localhost:8080/health
 - **Liveness**: http://localhost:8080/live
 - **Readiness**: http://localhost:8080/ready
@@ -110,6 +114,7 @@ docker-compose -f docker-compose.standalone.yml up -d
 ### Common Issues
 
 **Identity Provider Connection Errors**
+
 ```bash
 # Check IdP connectivity
 curl -v https://your-idp.example.com
@@ -119,6 +124,7 @@ docker-compose -f docker-compose.standalone.yml logs ldaptoid | grep -i oauth
 ```
 
 **LDAP Connection Issues**
+
 ```bash
 # Check if LDAP port is accessible
 nc -v localhost 389
@@ -128,6 +134,7 @@ ldapsearch -H ldap://localhost:389 -x -s base -b "" "(objectclass=*)"
 ```
 
 **Redis Connection Issues**
+
 ```bash
 # Check Redis health
 docker-compose -f docker-compose.standalone.yml exec redis redis-cli -a ldaptoid-redis-secret ping
