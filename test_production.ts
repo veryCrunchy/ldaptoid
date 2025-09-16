@@ -6,7 +6,6 @@
 import { assertEquals, assertExists } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { LDAPtoIDMain } from "./src/cli/main.ts";
 import { OAuth2Client } from "./src/services/oauth_client.ts";
-import { createLogger } from "./src/services/logger.ts";
 
 Deno.test("OAuth2 Client Test", async () => {
   console.log("🧪 Testing OAuth2 client...");

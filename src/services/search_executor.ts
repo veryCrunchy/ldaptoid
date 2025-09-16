@@ -1,10 +1,10 @@
 // LDAP Search Executor Service
 // Evaluates LDAP filters against snapshot data and generates search results
 
-import { 
-  SearchRequest, 
-  SearchResultEntry, 
-  Filter, 
+import {
+  SearchRequest,
+  SearchResultEntry,
+  Filter,
   FilterType,
   LDAPMessageType,
   AndFilter,
@@ -14,7 +14,7 @@ import {
   SubstringsFilter,
   PresentFilter,
   SubstringFilter as _SubstringFilter,
-  SearchScope as Scope 
+  SearchScope as Scope,
 } from "../protocol/ldap.ts";
 import { Snapshot, User, Group } from "../models/mod.ts";
 
@@ -37,7 +37,7 @@ export class SearchExecutor {
     this.snapshot = snapshot;
   }
 
-  async executeSearch(request: SearchRequest, options: SearchOptions = {}): Promise<SearchResult> {
+  executeSearch(request: SearchRequest, options: SearchOptions = {}): SearchResult {
     const startTime = Date.now();
     const sizeLimit = options.sizeLimit ?? 1000;
     const timeLimit = (options.timeLimit ?? 30) * 1000; // convert to ms
@@ -56,7 +56,7 @@ export class SearchExecutor {
         entries,
         sizeLimitExceeded: false,
         timeLimitExceeded: false,
-        entriesReturned: entries.length
+        entriesReturned: entries.length,
       };
     }
 
@@ -87,25 +87,32 @@ export class SearchExecutor {
       entries,
       sizeLimitExceeded,
       timeLimitExceeded,
-      entriesReturned: entries.length
+      entriesReturned: entries.length,
     };
   }
 
-  private getCandidateEntries(baseObject: string, scope: Scope): Array<{entity: User | Group | null, dn: string, type: "user" | "group" | "rootDSE"}> {
-    const candidates: Array<{entity: User | Group | null, dn: string, type: "user" | "group" | "rootDSE"}> = [];
+  private getCandidateEntries(
+    baseObject: string,
+    scope: Scope
+  ): Array<{ entity: User | Group | null; dn: string; type: "user" | "group" | "rootDSE" }> {
+    const candidates: Array<{
+      entity: User | Group | null;
+      dn: string;
+      type: "user" | "group" | "rootDSE";
+    }> = [];
 
     // Parse base DN to understand what we're searching in
     const baseDN = baseObject.toLowerCase();
 
     switch (scope) {
-      case Scope.BaseObject:
+      case Scope.BaseObject: {
         // Only return the base object itself
         const baseEntity = this.findEntityByDN(baseObject);
         if (baseEntity) {
           candidates.push(baseEntity);
         }
         break;
-
+      }
       case Scope.SingleLevel:
         // Return immediate children of base object
         if (baseDN.includes("ou=users") || baseDN.includes("ou=people")) {
@@ -114,7 +121,7 @@ export class SearchExecutor {
             candidates.push({
               entity: user,
               dn: `uid=${user.username},${baseObject}`,
-              type: "user"
+              type: "user",
             });
           }
         } else if (baseDN.includes("ou=groups")) {
@@ -123,7 +130,7 @@ export class SearchExecutor {
             candidates.push({
               entity: group,
               dn: `cn=${group.name},${baseObject}`,
-              type: "group"
+              type: "group",
             });
           }
         }
@@ -136,16 +143,16 @@ export class SearchExecutor {
           candidates.push({
             entity: user,
             dn: `uid=${user.username},ou=users,${baseObject}`,
-            type: "user"
+            type: "user",
           });
         }
-        
+
         // Add all groups
         for (const group of this.snapshot.groups) {
           candidates.push({
             entity: group,
             dn: `cn=${group.name},ou=groups,${baseObject}`,
-            type: "group"
+            type: "group",
           });
         }
         break;
@@ -154,14 +161,16 @@ export class SearchExecutor {
     return candidates;
   }
 
-  private findEntityByDN(dn: string): {entity: User | Group | null, dn: string, type: "user" | "group" | "rootDSE"} | null {
+  private findEntityByDN(
+    dn: string
+  ): { entity: User | Group | null; dn: string; type: "user" | "group" | "rootDSE" } | null {
     const lowerDN = dn.toLowerCase();
-    
+
     // Check if it's a user DN
     const uidMatch = lowerDN.match(/uid=([^,]+)/);
     if (uidMatch) {
       const uid = uidMatch[1];
-      const user = this.snapshot.users.find(u => u.username === uid);
+      const user = this.snapshot.users.find((u) => u.username === uid);
       if (user) {
         return { entity: user, dn, type: "user" };
       }
@@ -171,7 +180,7 @@ export class SearchExecutor {
     const cnMatch = lowerDN.match(/cn=([^,]+)/);
     if (cnMatch) {
       const cn = cnMatch[1];
-      const group = this.snapshot.groups.find(g => g.name === cn);
+      const group = this.snapshot.groups.find((g) => g.name === cn);
       if (group) {
         return { entity: group, dn, type: "group" };
       }
@@ -180,34 +189,47 @@ export class SearchExecutor {
     return null;
   }
 
-  private evaluateFilter(filter: Filter, entity: User | Group | null, entityType: "user" | "group" | "rootDSE"): boolean {
+  private evaluateFilter(
+    filter: Filter,
+    entity: User | Group | null,
+    entityType: "user" | "group" | "rootDSE"
+  ): boolean {
     switch (filter.type) {
       case FilterType.And:
-        return (filter as AndFilter).filters.every(f => this.evaluateFilter(f, entity, entityType));
+        return (filter as AndFilter).filters.every((f) =>
+          this.evaluateFilter(f, entity, entityType)
+        );
 
       case FilterType.Or:
-        return (filter as OrFilter).filters.some(f => this.evaluateFilter(f, entity, entityType));
+        return (filter as OrFilter).filters.some((f) => this.evaluateFilter(f, entity, entityType));
 
       case FilterType.Not:
         return !this.evaluateFilter((filter as NotFilter).filter, entity, entityType);
 
-      case FilterType.EqualityMatch:
+      case FilterType.EqualityMatch: {
         const eqFilter = filter as EqualityMatchFilter;
-        return this.evaluateEqualityFilter(eqFilter.attributeDesc, eqFilter.assertionValue, entity, entityType);
+        return this.evaluateEqualityFilter(
+          eqFilter.attributeDesc,
+          eqFilter.assertionValue,
+          entity,
+          entityType
+        );
+      }
 
-      case FilterType.Substrings:
+      case FilterType.Substrings: {
         const subFilter = filter as SubstringsFilter;
         // Convert SubstringFilter[] to the expected format
         const substrings = {
-          initial: subFilter.substrings.find(s => s.initial)?.initial,
-          any: subFilter.substrings.filter(s => s.any).flatMap(s => s.any || []),
-          final: subFilter.substrings.find(s => s.final)?.final
+          initial: subFilter.substrings.find((s) => s.initial)?.initial,
+          any: subFilter.substrings.filter((s) => s.any).flatMap((s) => s.any || []),
+          final: subFilter.substrings.find((s) => s.final)?.final,
         };
         return this.evaluateSubstringsFilter(subFilter.type_, substrings, entity, entityType);
-
-      case FilterType.Present:
+      }
+      case FilterType.Present: {
         const presFilter = filter as PresentFilter;
         return this.evaluatePresentFilter(presFilter.attributeDesc, entity, entityType);
+      }
 
       case FilterType.GreaterOrEqual:
       case FilterType.LessOrEqual:
@@ -220,7 +242,12 @@ export class SearchExecutor {
     }
   }
 
-  private evaluateEqualityFilter(attribute: string, value: string, entity: User | Group | null, entityType: "user" | "group" | "rootDSE"): boolean {
+  private evaluateEqualityFilter(
+    attribute: string,
+    value: string,
+    entity: User | Group | null,
+    entityType: "user" | "group" | "rootDSE"
+  ): boolean {
     const attrLower = attribute.toLowerCase();
     const valueLower = value.toLowerCase();
 
@@ -240,7 +267,13 @@ export class SearchExecutor {
     switch (attrLower) {
       case "objectclass":
         if (entityType === "user") {
-          return ["top", "person", "organizationalperson", "inetorgperson", "posixaccount"].includes(valueLower);
+          return [
+            "top",
+            "person",
+            "organizationalperson",
+            "inetorgperson",
+            "posixaccount",
+          ].includes(valueLower);
         } else if (entityType === "group") {
           return ["top", "groupofnames", "posixgroup"].includes(valueLower);
         }
@@ -264,21 +297,29 @@ export class SearchExecutor {
         return entityType === "user" && (entity as User).email?.toLowerCase() === valueLower;
 
       case "memberuid":
-        return entityType === "group" && (entity as Group).memberUserIds.some((uid: string) => uid.toLowerCase() === valueLower);
+        return (
+          entityType === "group" &&
+          (entity as Group).memberUserIds.some((uid: string) => uid.toLowerCase() === valueLower)
+        );
 
       default:
         return false;
     }
   }
 
-  private evaluateSubstringsFilter(attribute: string, substrings: {initial?: string, any?: string[], final?: string}, entity: User | Group | null, entityType: "user" | "group" | "rootDSE"): boolean {
+  private evaluateSubstringsFilter(
+    attribute: string,
+    substrings: { initial?: string; any?: string[]; final?: string },
+    entity: User | Group | null,
+    entityType: "user" | "group" | "rootDSE"
+  ): boolean {
     if (entityType === "rootDSE" || !entity) return false;
 
     const attrValue = this.getAttributeValue(attribute, entity, entityType);
     if (!attrValue) return false;
 
     const value = attrValue.toLowerCase();
-    
+
     // Check initial substring
     if (substrings.initial && !value.startsWith(substrings.initial.toLowerCase())) {
       return false;
@@ -301,9 +342,15 @@ export class SearchExecutor {
     return true;
   }
 
-  private evaluatePresentFilter(attribute: string, entity: User | Group | null, entityType: "user" | "group" | "rootDSE"): boolean {
+  private evaluatePresentFilter(
+    attribute: string,
+    entity: User | Group | null,
+    entityType: "user" | "group" | "rootDSE"
+  ): boolean {
     if (entityType === "rootDSE") {
-      return ["objectclass", "namingcontexts", "supportedldapversion"].includes(attribute.toLowerCase());
+      return ["objectclass", "namingcontexts", "supportedldapversion"].includes(
+        attribute.toLowerCase()
+      );
     }
 
     if (!entity) return false;
@@ -312,31 +359,50 @@ export class SearchExecutor {
     return value !== null && value !== undefined;
   }
 
-  private getAttributeValue(attribute: string, entity: User | Group, entityType: "user" | "group"): string | null {
+  private getAttributeValue(
+    attribute: string,
+    entity: User | Group,
+    entityType: "user" | "group"
+  ): string | null {
     const attrLower = attribute.toLowerCase();
 
     if (entityType === "user") {
       const user = entity as User;
       switch (attrLower) {
-        case "uid": return user.username;
-        case "cn": return user.displayName;
-        case "displayname": return user.displayName || null;
-        case "mail": return user.email || null;
-        case "givenname": return null; // Not available in our User model
-        case "sn": return null; // Not available in our User model  
-        case "uidnumber": return user.posixUid.toString();
-        case "gidnumber": return user.posixUid.toString(); // Use posixUid for primary group
-        case "homedirectory": return null; // Not available in our User model
-        case "loginshell": return null; // Not available in our User model
-        default: return null;
+        case "uid":
+          return user.username;
+        case "cn":
+          return user.displayName;
+        case "displayname":
+          return user.displayName || null;
+        case "mail":
+          return user.email || null;
+        case "givenname":
+          return null; // Not available in our User model
+        case "sn":
+          return null; // Not available in our User model
+        case "uidnumber":
+          return user.posixUid.toString();
+        case "gidnumber":
+          return user.posixUid.toString(); // Use posixUid for primary group
+        case "homedirectory":
+          return null; // Not available in our User model
+        case "loginshell":
+          return null; // Not available in our User model
+        default:
+          return null;
       }
     } else if (entityType === "group") {
       const group = entity as Group;
       switch (attrLower) {
-        case "cn": return group.name;
-        case "gidnumber": return group.posixGid.toString();
-        case "description": return group.description || null;
-        default: return null;
+        case "cn":
+          return group.name;
+        case "gidnumber":
+          return group.posixGid.toString();
+        case "description":
+          return group.description || null;
+        default:
+          return null;
       }
     }
 
@@ -345,17 +411,17 @@ export class SearchExecutor {
 
   private createRootDSE(requestedAttributes: string[]): SearchResultEntry {
     const attributes = [];
-    
+
     const allAttrs = requestedAttributes.length === 0 || requestedAttributes.includes("*");
-    
+
     if (allAttrs || requestedAttributes.includes("objectClass")) {
       attributes.push({ type: "objectClass", vals: ["top", "rootDSE"] });
     }
-    
+
     if (allAttrs || requestedAttributes.includes("namingContexts")) {
       attributes.push({ type: "namingContexts", vals: ["dc=example,dc=com"] });
     }
-    
+
     if (allAttrs || requestedAttributes.includes("supportedLDAPVersion")) {
       attributes.push({ type: "supportedLDAPVersion", vals: ["3"] });
     }
@@ -363,11 +429,14 @@ export class SearchExecutor {
     return {
       type: LDAPMessageType.SearchResultEntry,
       objectName: "",
-      attributes
+      attributes,
     };
   }
 
-  private createSearchResultEntry(candidate: {entity: User | Group | null, dn: string, type: "user" | "group" | "rootDSE"}, requestedAttributes: string[]): SearchResultEntry {
+  private createSearchResultEntry(
+    candidate: { entity: User | Group | null; dn: string; type: "user" | "group" | "rootDSE" },
+    requestedAttributes: string[]
+  ): SearchResultEntry {
     const attributes = [];
     const allAttrs = requestedAttributes.length === 0 || requestedAttributes.includes("*");
     const entity = candidate.entity;
@@ -376,70 +445,69 @@ export class SearchExecutor {
       return {
         type: LDAPMessageType.SearchResultEntry,
         objectName: candidate.dn,
-        attributes: []
+        attributes: [],
       };
     }
 
     if (candidate.type === "user") {
       const user = entity as User;
-      
+
       if (allAttrs || requestedAttributes.includes("objectClass")) {
-        attributes.push({ 
-          type: "objectClass", 
-          vals: ["top", "person", "organizationalPerson", "inetOrgPerson", "posixAccount"] 
+        attributes.push({
+          type: "objectClass",
+          vals: ["top", "person", "organizationalPerson", "inetOrgPerson", "posixAccount"],
         });
       }
-      
+
       if (allAttrs || requestedAttributes.includes("uid")) {
         attributes.push({ type: "uid", vals: [user.username] });
       }
-      
+
       if (allAttrs || requestedAttributes.includes("cn")) {
         attributes.push({ type: "cn", vals: [user.displayName] });
       }
-      
+
       if ((allAttrs || requestedAttributes.includes("displayName")) && user.displayName) {
         attributes.push({ type: "displayName", vals: [user.displayName] });
       }
-      
+
       if ((allAttrs || requestedAttributes.includes("mail")) && user.email) {
         attributes.push({ type: "mail", vals: [user.email] });
       }
-      
+
       // Skip givenName and sn as they're not in our User model
-      
+
       if (allAttrs || requestedAttributes.includes("uidNumber")) {
         attributes.push({ type: "uidNumber", vals: [user.posixUid.toString()] });
       }
-      
+
       if (allAttrs || requestedAttributes.includes("gidNumber")) {
         attributes.push({ type: "gidNumber", vals: [user.posixUid.toString()] }); // Use posixUid as primary GID
       }
-      
+
       // Skip homeDirectory and loginShell as they're not in our User model
-      
     } else if (candidate.type === "group") {
       const group = entity as Group;
-      
+
       if (allAttrs || requestedAttributes.includes("objectClass")) {
-        attributes.push({ 
-          type: "objectClass", 
-          vals: ["top", "groupOfNames", "posixGroup"] 
+        attributes.push({
+          type: "objectClass",
+          vals: ["top", "groupOfNames", "posixGroup"],
         });
       }
-      
+
       if (allAttrs || requestedAttributes.includes("cn")) {
         attributes.push({ type: "cn", vals: [group.name] });
       }
-      
+
       if (allAttrs || requestedAttributes.includes("gidNumber")) {
         attributes.push({ type: "gidNumber", vals: [group.posixGid.toString()] });
       }
-      
+
       if ((allAttrs || requestedAttributes.includes("description")) && group.description) {
         attributes.push({ type: "description", vals: [group.description] });
       }
-      
+
       if (allAttrs || requestedAttributes.includes("memberUid")) {
         attributes.push({ type: "memberUid", vals: group.memberUserIds });
       }
@@ -448,7 +516,7 @@ export class SearchExecutor {
     return {
       type: LDAPMessageType.SearchResultEntry,
       objectName: candidate.dn,
-      attributes
+      attributes,
     };
   }
 }
