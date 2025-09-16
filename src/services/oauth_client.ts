@@ -149,7 +149,7 @@ export class OAuth2Client {
       grant_type: "client_credentials",
       client_id: config.clientId,
       client_secret: config.clientSecret,
-      scope: "urn:zitadel:iam:org:projects:roles", // Zitadel v2 scope for user/group access
+      scope: "openid profile urn:zitadel:iam:org:project:id:zitadel:aud", // Zitadel v2 scope for user/group access
     });
 
     // Add organization scope if specified (for Zitadel v2 multi-org)
