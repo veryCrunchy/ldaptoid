@@ -1,12 +1,14 @@
 # Data Model: LDAP Read-only Proxy
 
-Status: DRAFT
-Generated: 2025-09-16
+Status: FINAL (aligned with implementation)
+Generated: 2025-09-16  
+Updated: 2025-09-16 (Zitadel v2 API integration)
 
 ## Conventions
 - TypeScript types / interfaces (Deno)
 - All IDs immutable after assignment
 - Timestamps in ISO 8601 UTC
+- Zitadel integration uses v2 resource-based API where available
 
 ## Entities
 
@@ -19,98 +21,131 @@ Generated: 2025-09-16
 | email | string | IdP | Optional; may populate `mail` |
 | active | boolean | Derived | From IdP status fields |
 | posixUid | number | Derived | Deterministic allocator |
-| primaryGroupId | string | Derived | SyntheticPrimaryGroup.id |
-| memberGroupIds | string[] | IdP | Direct group memberships |
-| createdAt | string | IdP | Auditing only |
-| updatedAt | string | IdP | Auditing only |
+| primaryGroupId | string | Derived | Group ID (synthetic or default) |
+| memberGroupIds | string[] | Derived | Direct group memberships |
+| createdAt | string | System | Snapshot build timestamp |
+| updatedAt | string | System | Snapshot build timestamp |
 
-### Group
+### Group  
 | Field | Type | Source | Notes |
 |-------|------|--------|-------|
-| id | string | IdP | Stable IdP GUID |
-| name | string | IdP | Maps to `cn` |
+| id | string | IdP/Derived | Stable IdP GUID or synthetic ID |
+| name | string | IdP/Derived | Maps to `cn` |
 | description | string | IdP | Optional |
 | memberUserIds | string[] | IdP | Direct user members |
-| memberGroupIds | string[] | IdP | Nested groups if supported |
+| memberGroupIds | string[] | IdP | Nested groups (Phase 1: empty) |
 | posixGid | number | Derived | Deterministic allocator |
-| isSynthetic | boolean | Derived | False for native IdP groups |
-
-### SyntheticPrimaryGroup
-| Field | Type | Source | Notes |
-|-------|------|--------|-------|
-| id | string | Derived | e.g., `spg:{user.id}` |
-| gidNumber | number | Derived | Separate deterministic range or same as user UID |
-| userId | string | Derived | Owning user |
-
-### MirroredGroup
-| Field | Type | Source | Notes |
-|-------|------|--------|-------|
-| id | string | Derived | e.g., `mirror:{targetGroupId}` |
-| targetGroupId | string | Derived | Source group id |
-| posixGid | number | Derived | From target or new allocation |
+| isSynthetic | boolean | Derived | True for synthetic primary groups |
+| truncated | boolean | Derived | True if membership truncated at 5000 |
 
 ### Snapshot
 | Field | Type | Source | Notes |
 |-------|------|--------|-------|
 | users | User[] | Aggregate | Filtered for active only |
-| groups | Group[] | Aggregate | Includes synthetic/mirrored |
+| groups | Group[] | Aggregate | Includes synthetic if enabled |
 | generatedAt | string | System | Snapshot build timestamp |
 | sequence | number | System | Monotonic counter |
 | featureFlags | string[] | Config | Enabled features at build |
 
-### FeatureFlags
+### FeatureFlag (Type Union)
+```typescript
+type FeatureFlag = 'synthetic_primary_group' | 'mirror_nested_groups';
+```
+
+### RawUser (Adaptor Interface)
 | Field | Type | Source | Notes |
 |-------|------|--------|-------|
-| name | string | Config | Identifier |
-| enabled | boolean | Config | State |
-| description | string | Config | Purpose |
+| id | string | IdP | Stable identifier |
+| username | string | IdP | Login name |
+| email | string? | IdP | Contact email |
+| enabled | boolean | IdP | Active status |
+| displayName | string? | IdP | Full name |
 
-### BackendAdaptor (Interface)
+### RawGroup (Adaptor Interface)
+| Field | Type | Source | Notes |
+|-------|------|--------|-------|
+| id | string | IdP | Stable identifier |
+| name | string | IdP | Group name |
+| description | string? | IdP | Optional description |
+| members | string[]? | IdP | User IDs (may require additional calls) |
+
+### Adaptor Interface
 | Method | Input | Output | Notes |
 |--------|-------|--------|-------|
-| fetchUsers() | cursor/params | RawUser[] | Must include active state source fields |
-| fetchGroups() | cursor/params | RawGroup[] | May need pagination |
-| fetchGroupMemberships() | group ids | Map<groupId,userIds> | Optional separate call |
-| health() | - | { ok: boolean; details?: any } | For readiness |
+| fetchUsers() | - | Promise<RawUser[]> | All active users |
+| fetchGroups() | - | Promise<RawGroup[]> | All groups |
+| fetchNestedGroups()? | - | Promise<{groupId,nestedGroupIds}[]> | Optional |
+| close() | - | Promise<void> | Cleanup |
 
-### RawUser / RawGroup (IdP-Specific)
-Represent opaque records from IdPs; mapped by adaptor mappers into canonical entities.
+## IdP-Specific Mappings
+
+### Keycloak
+- Users: `GET /admin/realms/{realm}/users`
+- Groups: `GET /admin/realms/{realm}/groups`  
+- Active status: `user.enabled === true`
+
+### Microsoft Entra
+- Users: `GET /v1.0/users`
+- Groups: `GET /v1.0/groups`
+- Active status: `user.accountEnabled === true`
+
+### Zitadel (v2 API Focus)
+- Users: `POST /v2/users` (search) - preferred v2 resource-based API
+- Groups: Empty array (no traditional groups, synthetic primary used)
+- Organization context: `x-zitadel-orgid` header  
+- Active status: `user.state === 'USER_STATE_ACTIVE'`
+- Fallback: Management API for any missing v2 functionality
 
 ## Relationships
-- User (1) — (1) SyntheticPrimaryGroup
-- Group (recursive) via memberGroupIds (acyclic enforced or truncated)
+- User (1) — (0..1) SyntheticPrimaryGroup (if feature enabled)
 - User (many) — (many) Group (through membership)
+- Group nesting deferred to Phase 2
 
 ## Derived Data Rules
-1. posixUid / posixGid assigned via deterministic hash(user.id|group.id) with collision map.
-2. Synthetic primary group enabled only if feature flag `synthetic_primary_group` true.
-3. Mirrored groups created for nested groups if feature flag `mirror_nested_groups` true.
-4. Inactive users excluded from snapshot; memberships referencing them removed.
-5. memberOf overlay generated by reverse indexing group memberships.
+1. posixUid / posixGid assigned via FNV-1a hash with collision handling per research.md
+2. Synthetic primary group created per user if `synthetic_primary_group` feature enabled
+3. Inactive users excluded based on IdP-specific enabled field
+4. Group membership truncated at 5000 members with truncation flag
+5. memberOf overlay generated by reverse indexing during snapshot build
 
 ## Validation Rules
-- Username must be LDAP-compatible (sanitize illegal chars: replace spaces with `_`).
-- Group name uniqueness: collisions resolved by suffix `_n` deterministic stable.
-- UID/GID ranges: reserve <1000 for system; start allocations at 1000.
-- Collision: if hash result collides, append `:1`, re-hash, repeat (max 5) then fallback incremental.
+- Username sanitized: spaces → underscore, remove non-LDAP chars
+- Group name collision resolved by `_n` suffix (deterministic)
+- UID/GID ranges: start at 10000 (configurable floor)
+- Hash collision: up to 4 salted retries, then sequential fallback
 
-## Open Questions
-- Final hash algorithm & salt scheme (see research #3, #10).
-- gidNumber for SyntheticPrimaryGroup = user UID? (Simplifies mapping) TBD.
-- Maximum group nesting depth allowed (protection vs expansion). TBD (candidate: 5).
+## ID Allocation Strategy (Per Research.md)
+1. **Primary**: FNV-1a 64-bit hash of `salt:attempt:key` → truncate to 31-bit
+2. **Collision**: Retry with `:1`, `:2`, `:3`, `:4` suffix (max 5 attempts)
+3. **Fallback**: Sequential allocation from Redis-backed counter
+4. **Persistence**: Optional Redis for UID/GID mapping stability
 
-## Mapping to LDAP Attributes (Initial Subset)
+## LDAP Attribute Mapping
 | LDAP Attr | Source Field | Notes |
 |-----------|--------------|-------|
 | uid | User.username | |
 | cn | User.displayName or Group.name | |
 | mail | User.email | Omit if empty |
-| memberOf | Derived overlay | Multi-valued |
-| gidNumber | Group.posixGid / SyntheticPrimaryGroup.gidNumber | |
 | uidNumber | User.posixUid | |
-| objectClass | static list | Depends on entry type |
+| gidNumber | Group.posixGid | |
+| memberOf | Derived from Group.memberUserIds | Multi-valued |
+| objectClass | Static based on entry type | |
 
-## Future Extensions
-- Delta snapshots (incremental updates)
-- Attribute filtering per client
-- StartTLS support
+## Metrics Schema
+Based on research.md decisions:
+- `ldaptoid_users` / `ldaptoid_groups` - entity counts
+- `ldaptoid_refresh_total{result}` - refresh outcomes  
+- `ldaptoid_snapshot_age_seconds` - freshness
+- `ldaptoid_id_collisions_total` - allocation conflicts
+- `ldaptoid_group_truncations_total` - large group handling
+- `ldaptoid_feature_flags{flag}` - feature state exposure
+
+## Implementation Status
+- [x] User/Group domain models implemented
+- [x] UID/GID allocator with FNV-1a + collision handling
+- [x] Adaptor interface with Raw* types  
+- [x] Keycloak/Entra/Zitadel adaptors (Zitadel uses v2 API)
+- [x] Snapshot builder with feature flag support
+- [ ] LDAP protocol implementation
+- [ ] Metrics endpoint
+- [ ] Redis persistence layer

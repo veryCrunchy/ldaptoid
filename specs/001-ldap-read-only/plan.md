@@ -1,8 +1,8 @@
 
-# Implementation Plan: [FEATURE]
+# Implementation Plan: LDAP Read-only Proxy over OIDC IdP
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `001-ldap-read-only` | **Date**: 2025-09-16 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/001-ldap-read-only/spec.md`
 
 ## Execution Flow (/plan command scope)
 ```
@@ -31,23 +31,30 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-[Extract from feature spec: primary requirement + technical approach from research]
+LDAP read-only proxy providing directory access to users and groups from OIDC IdP backends (Keycloak, Entra, Zitadel v2). Features deterministic POSIX ID allocation, optional synthetic primary/mirrored groups, background refresh, metrics, and feature flags. Focus on Zitadel v2 resource-based API integration with fallback to legacy service-based APIs where needed.
 
 ## Technical Context
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript on Deno v2  
+**Primary Dependencies**: Deno standard library, LDAP BER encoding (custom minimal), FNV hash, Prometheus client  
+**Storage**: Redis (optional persistence for UID/GID mappings), in-memory snapshots  
+**Testing**: Deno test framework with contract/integration/unit test structure  
+**Target Platform**: Linux containers, deployable via Docker/Kubernetes  
+**Project Type**: single (backend service with CLI)  
+**Performance Goals**: <10ms p50 search latency, <30s full refresh (10k users), <256MB memory  
+**Constraints**: Read-only LDAP subset, deterministic ID allocation, background refresh resilience  
+**Scale/Scope**: 10k users, 2k groups, 3 IdP types (Keycloak, Entra, Zitadel v2 API focus)  
+**Zitadel Integration**: Prioritize v2 resource-based API (`/v2/users` POST search) over legacy management API
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+**Test-First (NON-NEGOTIABLE)**: ✅ PASS - TDD workflow enforced with failing contract/integration tests before implementation  
+**CLI Interface**: ✅ PASS - Service exposes CLI for configuration, feature flag listing, health checks  
+**Library-First**: ⚠️ ATTENTION - Core components (ID allocator, adaptors, snapshot builder) structured as standalone modules with clear interfaces  
+**Integration Testing**: ✅ PASS - Contract tests for LDAP protocol, integration tests for snapshot refresh and ID stability  
+**Observability**: ✅ PASS - Prometheus metrics for refresh status, entity counts, performance tracking, structured logging  
+
+**Complexity Deviations**: None identified - single service with modular internal structure
 
 ## Project Structure
 
@@ -99,7 +106,7 @@ ios/ or android/
 └── [platform-specific structure]
 ```
 
-**Structure Decision**: [DEFAULT to Option 1 unless Technical Context indicates web/mobile app]
+**Structure Decision**: Option 1 (single project) - Backend service with CLI interface, no frontend components
 
 ## Phase 0: Outline & Research
 1. **Extract unknowns from Technical Context** above:
@@ -194,18 +201,25 @@ ios/ or android/
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [ ] Phase 0: Research complete (/plan command)
-- [ ] Phase 1: Design complete (/plan command)
-- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
-- [ ] Phase 3: Tasks generated (/tasks command)
+- [x] Phase 0: Research complete (/plan command)
+- [x] Phase 1: Design complete (/plan command) 
+- [x] Phase 2: Task planning complete (/plan command - updated task status)
+- [ ] Phase 3: Tasks generated (/tasks command) - READY FOR EXECUTION
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
 - [x] Initial Constitution Check: PASS
-- [x] Post-Design Constitution Check: PASS (artifacts present: research.md, data-model.md, contracts/*, quickstart.md)
+- [x] Post-Design Constitution Check: PASS  
 - [x] All NEEDS CLARIFICATION resolved
-- [ ] Complexity deviations documented
+- [x] Complexity deviations documented (none required)
+
+**Artifact Status**:
+- [x] research.md - All technical decisions finalized with Zitadel v2 API focus
+- [x] data-model.md - Updated with current implementation and v2 API mappings
+- [x] contracts/ - LDAP protocol contracts defined
+- [x] quickstart.md - User scenarios and validation steps
+- [x] Zitadel v2 integration - Adaptor updated to use resource-based API with management fallback
 
 ---
 *Based on Constitution v2.1.1 - See `/memory/constitution.md`*

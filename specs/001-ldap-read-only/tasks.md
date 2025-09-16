@@ -1,66 +1,66 @@
 # Tasks: LDAP Read-only Proxy over OIDC IdP
 
 **Input**: Design documents from `/specs/001-ldap-read-only/`
-**Prerequisites**: plan.md (present). research.md, data-model.md, contracts/ not yet created (TBD) — tasks include creation.
+**Prerequisites**: All Phase 0 & 1 design artifacts present (plan.md, research.md, data-model.md, contracts/*, quickstart.md). Setup & model tasks completed; contract & integration test skeletons added and currently failing as intended.
 
-Because Phase 1 artifacts are not yet generated, tasks will bootstrap missing design docs first while still honoring TDD (tests before core implementation). Parallel markers [P] only used where files are independent.
+Remaining tasks focus on core service implementation, integration wiring, and polish. Completed tasks are marked accordingly. Parallel markers [P] only used where files are independent.
 
 ## Phase 3.1: Setup
-- [ ] T001 Initialize Deno project structure (create `src/`, `tests/`, `src/models/`, `src/services/`, `src/cli/`, `tests/contract/`, `tests/integration/`, `tests/unit/`)  
+- [x] T001 Initialize Deno project structure (create `src/`, `tests/`, `src/models/`, `src/services/`, `src/cli/`, `tests/contract/`, `tests/integration/`, `tests/unit/`)  
   - Files: N/A (directory scaffold)
-- [ ] T002 Create base config files (`deno.json`, `README.md` stub, `.editorconfig`)  
+- [x] T002 Create base config files (`deno.json`, `README.md` stub, `.editorconfig`)  
   - Files: `deno.json`, `README.md`, `.editorconfig`
-- [ ] T003 [P] Add lint & format configuration in `deno.json` (lint rules, import map placeholder)  
+- [x] T003 [P] Add lint & format configuration in `deno.json` (lint rules, import map placeholder)  
   - File: `deno.json`
-- [ ] T004 Add Makefile or task runner script (`scripts/dev.sh`) for common commands (optional)  
+- [x] T004 Add Makefile or task runner script (`scripts/dev.sh`) for common commands (optional)  
   - File: `scripts/dev.sh`
-- [ ] T005 Define environment example file (`.env.example`) documenting required IdP credentials (Keycloak, Entra, Zitadel placeholder)  
+- [x] T005 Define environment example file (`.env.example`) documenting required IdP credentials (Keycloak, Entra, Zitadel placeholder)  
   - File: `.env.example`
-- [ ] T006 [P] Add `src/cli/main.ts` entrypoint with argument parsing skeleton (no logic)  
+- [x] T006 [P] Add `src/cli/main.ts` entrypoint with argument parsing skeleton (no logic)  
   - File: `src/cli/main.ts`
 
 ## Phase 3.2: Tests First (Design Artifact Generation + TDD)
-- [ ] T007 Create `research.md` resolving NEEDS CLARIFICATION (LDAP lib choice, hash algo, limits, inactive criteria, feature flag exposure, Zitadel mapping)  
+- [x] T007 Create `research.md` resolving NEEDS CLARIFICATION (LDAP lib choice, hash algo, limits, inactive criteria, feature flag exposure, Zitadel mapping)  
   - File: `specs/001-ldap-read-only/research.md`
-- [ ] T008 Create `data-model.md` with entities: User, Group, SyntheticPrimaryGroup, MirroredGroup, Snapshot, FeatureFlags, BackendAdaptor  
+- [x] T008 Create `data-model.md` with entities: User, Group, SyntheticPrimaryGroup, MirroredGroup, Snapshot, FeatureFlags, BackendAdaptor  
   - File: `specs/001-ldap-read-only/data-model.md`
-- [ ] T009 [P] Create `contracts/ldap-search.md` describing search request/response contract & attribute mapping examples  
+- [x] T009 [P] Create `contracts/ldap-search.md` describing search request/response contract & attribute mapping examples  
   - File: `specs/001-ldap-read-only/contracts/ldap-search.md`
-- [ ] T010 [P] Create `contracts/ldap-bind.md` describing simple bind expectations & errors  
+- [x] T010 [P] Create `contracts/ldap-bind.md` describing simple bind expectations & errors  
   - File: `specs/001-ldap-read-only/contracts/ldap-bind.md`
-- [ ] T011 [P] Create `contracts/ldap-rootdse.md` describing RootDSE attribute set  
+- [x] T011 [P] Create `contracts/ldap-rootdse.md` describing RootDSE attribute set  
   - File: `specs/001-ldap-read-only/contracts/ldap-rootdse.md`
-- [ ] T012 [P] Create `quickstart.md` with scenario: run server, perform bind, search users, metrics check, feature flag list  
+- [x] T012 [P] Create `quickstart.md` with scenario: run server, perform bind, search users, metrics check, feature flag list  
   - File: `specs/001-ldap-read-only/quickstart.md`
-- [ ] T013 Generate failing contract test: Bind success & invalid credentials (`tests/contract/bind_test.ts`)  
+- [x] T013 Generate failing contract test: Bind success & invalid credentials (`tests/contract/bind_test.ts`)  
   - File: `tests/contract/bind_test.ts`
-- [ ] T014 [P] Failing contract test: RootDSE retrieval (`tests/contract/rootdse_test.ts`)  
+- [x] T014 [P] Failing contract test: RootDSE retrieval (`tests/contract/rootdse_test.ts`)  
   - File: `tests/contract/rootdse_test.ts`
-- [ ] T015 [P] Failing contract test: Basic user search filter (uid=*) returns expected attributes (`tests/contract/search_basic_test.ts`)  
+- [x] T015 [P] Failing contract test: Basic user search filter (uid=*) returns expected attributes (`tests/contract/search_basic_test.ts`)  
   - File: `tests/contract/search_basic_test.ts`
-- [ ] T016 [P] Failing contract test: Group membership expansion & memberOf overlay (`tests/contract/search_group_membership_test.ts`)  
+- [x] T016 [P] Failing contract test: Group membership expansion & memberOf overlay (`tests/contract/search_group_membership_test.ts`)  
   - File: `tests/contract/search_group_membership_test.ts`
-- [ ] T017 Integration test (failing): Snapshot refresh interval & consistent results during refresh (`tests/integration/snapshot_refresh_test.ts`)  
+- [x] T017 Integration test (failing): Snapshot refresh interval & consistent results during refresh (`tests/integration/snapshot_refresh_test.ts`)  
   - File: `tests/integration/snapshot_refresh_test.ts`
-- [ ] T018 [P] Integration test: Feature flags appear in metrics or introspection endpoint (`tests/integration/feature_flags_test.ts`)  
+- [x] T018 [P] Integration test: Feature flags appear in metrics or introspection endpoint (`tests/integration/feature_flags_test.ts`)  
   - File: `tests/integration/feature_flags_test.ts`
-- [ ] T019 [P] Integration test: Deterministic UID/GID stable across restarts with Redis configured (`tests/integration/uid_gid_stability_test.ts`)  
+- [x] T019 [P] Integration test: Deterministic UID/GID stable across restarts with Redis configured (`tests/integration/uid_gid_stability_test.ts`)  
   - File: `tests/integration/uid_gid_stability_test.ts`
-- [ ] T020 Integration test: Inactive user filtering criteria enforced (`tests/integration/inactive_users_test.ts`)  
+- [x] T020 Integration test: Inactive user filtering criteria enforced (`tests/integration/inactive_users_test.ts`)  
   - File: `tests/integration/inactive_users_test.ts`
 
 ## Phase 3.3: Core Implementation (Only after tests exist & fail)
-- [ ] T021 Implement domain models & types (`src/models/*.ts`) from `data-model.md`  
+- [x] T021 Implement domain models & types (`src/models/*.ts`) from `data-model.md`  
   - Files: `src/models/user.ts`, `src/models/group.ts`, `src/models/snapshot.ts`, `src/models/feature_flags.ts`
-- [ ] T022 [P] Implement UID/GID allocator with deterministic hashing & collision handling (`src/services/id_allocator.ts`)  
+- [x] T022 [P] Implement UID/GID allocator with deterministic hashing & collision handling (`src/services/id_allocator.ts`)  
   - File: `src/services/id_allocator.ts`
-- [ ] T023 [P] Implement BackendAdaptor interface & Keycloak adaptor skeleton (`src/services/adaptors/keycloak_adaptor.ts`)  
-  - File: `src/services/adaptors/keycloak_adaptor.ts`
-- [ ] T024 Implement Entra adaptor skeleton (`src/services/adaptors/entra_adaptor.ts`)  
-  - File: `src/services/adaptors/entra_adaptor.ts`
-- [ ] T025 Implement Zitadel adaptor stub (not wired yet) (`src/services/adaptors/zitadel_adaptor.ts`)  
-  - File: `src/services/adaptors/zitadel_adaptor.ts`
-- [ ] T026 Snapshot builder service (full refresh logic) (`src/services/snapshot_builder.ts`)  
+- [x] T023 [P] Implement BackendAdaptor interface & Keycloak adaptor skeleton (`src/adaptors/keycloak_adaptor.ts`)  
+  - File: `src/adaptors/keycloak_adaptor.ts`
+- [x] T024 Implement Entra adaptor skeleton (`src/adaptors/entra_adaptor.ts`)  
+  - File: `src/adaptors/entra_adaptor.ts`
+- [x] T025 Implement Zitadel adaptor (v2 API focused) (`src/adaptors/zitadel_adaptor.ts`)  
+  - File: `src/adaptors/zitadel_adaptor.ts`
+- [x] T026 Snapshot builder service (full refresh logic) (`src/services/snapshot_builder.ts`)  
   - File: `src/services/snapshot_builder.ts`
 - [ ] T027 [P] Feature flag registry & introspection exposure (`src/services/feature_flags.ts`)  
   - File: `src/services/feature_flags.ts`

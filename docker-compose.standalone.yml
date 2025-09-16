@@ -1,0 +1,218 @@
+version: '3.8'
+
+services:
+  # LDAP-to-ID Proxy - Standalone Configuration
+  ldaptoid:
+    image: ghcr.io/obiente/ldaptoid:latest
+    container_name: ldaptoid
+    restart: unless-stopped
+    ports:
+      - "389:389"   # LDAP port
+      - "8080:8080" # Health check port
+      - "9090:9090" # Metrics port
+    environment:
+      # Required IdP configuration - CONFIGURE THESE BEFORE RUNNING
+      LDAPTOID_IDP_TYPE: "zitadel"  # Change to: keycloak|entra|zitadel
+      LDAPTOID_IDP_BASE_URL: "https://your-idp.example.com"  # Change to your IdP URL
+      LDAPTOID_IDP_CLIENT_ID: "your-client-id"  # Change to your client ID
+      LDAPTOID_IDP_CLIENT_SECRET: "your-client-secret"  # Change to your client secret
+      
+      # IdP-specific configuration (uncomment and configure as needed)
+      # LDAPTOID_IDP_REALM: "your-realm"  # For Keycloak
+      # LDAPTOID_IDP_TENANT: "your-tenant-id"  # For Entra ID
+      # LDAPTOID_IDP_ORGANIZATION: "your-org-id"  # For Zitadel v2
+      
+      # LDAP configuration - sensible defaults
+      LDAPTOID_LDAP_BASE_DN: "dc=company,dc=com"
+      LDAPTOID_ALLOW_ANONYMOUS_BIND: "true"
+      
+      # Redis configuration - using included Redis service
+      LDAPTOID_REDIS_ENABLED: "true"
+      LDAPTOID_REDIS_HOST: "redis"
+      LDAPTOID_REDIS_PORT: "6379"
+      LDAPTOID_REDIS_PASSWORD: "ldaptoid-redis-secret"
+      LDAPTOID_REDIS_DATABASE: "0"
+      
+      # Feature flags - enabled for production use
+      LDAPTOID_ENABLED_FEATURES: "synthetic_primary_group,mirror_nested_groups"
+      
+      # Operational settings
+      LDAPTOID_VERBOSE: "false"
+      LDAPTOID_LOG_LEVEL: "INFO"
+      LDAPTOID_REFRESH_INTERVAL_MS: "300000"  # 5 minutes
+      
+      # Metrics and monitoring
+      LDAPTOID_METRICS_ENABLED: "true"
+      LDAPTOID_HEALTH_CHECK_ENABLED: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - ldaptoid-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis for UID/GID mapping persistence
+  redis:
+    image: redis:7.4-alpine
+    container_name: ldaptoid-redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    environment:
+      REDIS_PASSWORD: "ldaptoid-redis-secret"
+    command: >
+      redis-server
+      --requirepass "ldaptoid-redis-secret"
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis-data:/data
+    networks:
+      - ldaptoid-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "ldaptoid-redis-secret", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: ldaptoid-prometheus
+    restart: unless-stopped
+    ports:
+      - "9091:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    volumes:
+      - prometheus-data:/prometheus
+      - prometheus-config:/etc/prometheus
+    networks:
+      - ldaptoid-network
+    depends_on:
+      - ldaptoid
+      - prometheus-config-init
+
+  # Init container to create Prometheus config
+  prometheus-config-init:
+    image: alpine:latest
+    container_name: ldaptoid-prometheus-config-init
+    volumes:
+      - prometheus-config:/config
+    command: |
+      sh -c '
+      cat > /config/prometheus.yml << EOF
+      global:
+        scrape_interval: 15s
+        evaluation_interval: 15s
+
+      scrape_configs:
+        # LDAP-to-ID Proxy metrics
+        - job_name: "ldaptoid"
+          static_configs:
+            - targets: ["ldaptoid:9090"]
+          scrape_interval: 15s
+          metrics_path: "/metrics"
+
+        # Redis metrics via redis_exporter
+        - job_name: "redis"
+          static_configs:
+            - targets: ["redis-exporter:9121"]
+          scrape_interval: 15s
+
+        # Prometheus self-monitoring
+        - job_name: "prometheus"
+          static_configs:
+            - targets: ["localhost:9090"]
+
+        # Grafana metrics
+        - job_name: "grafana"
+          static_configs:
+            - targets: ["grafana:3000"]
+          metrics_path: "/metrics"
+          scrape_interval: 30s
+      EOF
+      '
+    restart: "no"
+
+  # Grafana for metrics visualization
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: ldaptoid-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: "redis-datasource,prometheus"
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "redis-datasource"
+      # Auto-configure Prometheus datasource
+      GF_DATASOURCES_DEFAULT_DATASOURCES: |
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus:9090
+          isDefault: true
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - ldaptoid-network
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis Exporter for Redis metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: ldaptoid-redis-exporter
+    restart: unless-stopped
+    expose:
+      - "9121"
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD: "ldaptoid-redis-secret"
+    networks:
+      - ldaptoid-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  prometheus-config:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  ldaptoid-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
