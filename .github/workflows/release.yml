@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.1.4
+
+      - name: Build binaries
+        run: |
+          # Linux x64
+          deno task build
+          tar -czf ldaptoid-linux-x64.tar.gz bin/ldaptoid
+          
+          # Linux ARM64
+          deno compile --allow-net --allow-env --target aarch64-unknown-linux-gnu --output bin/ldaptoid-arm64 src/cli/main.ts
+          tar -czf ldaptoid-linux-arm64.tar.gz bin/ldaptoid-arm64
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ldaptoid-linux-x64.tar.gz
+            ldaptoid-linux-arm64.tar.gz
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

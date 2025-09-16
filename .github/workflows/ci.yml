@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.1.4
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/deno/deps
+            ~/.cache/deno/gen
+          key: ${{ runner.os }}-deno-${{ hashFiles('deno.json', 'deno.lock') }}
+
+      - name: Check TypeScript
+        run: deno task check
+
+      - name: Lint code
+        run: deno task lint
+
+      - name: Check formatting
+        run: deno task fmt:check
+
+      - name: Run tests
+        run: deno task test:integration
+        env:
+          LDAPTOID_IDP_TYPE: zitadel
+          LDAPTOID_IDP_BASE_URL: https://test.zitadel.cloud
+          LDAPTOID_IDP_CLIENT_ID: test-client
+          LDAPTOID_IDP_CLIENT_SECRET: test-secret
