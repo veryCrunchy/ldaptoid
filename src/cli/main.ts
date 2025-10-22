@@ -158,23 +158,23 @@ export class LDAPtoIDMain {
       },
       default: {
         "ldap-port": Deno.env.get("LDAPTOID_LDAP_PORT") || "389",
-        "ldap-base-dn": "dc=example,dc=com",
-        "ldap-size-limit": "1000",
-        "allow-anonymous-bind": false,
-        "refresh-interval-ms": "300000", // 5 minutes
-        "max-backoff-ms": "300000", // 5 minutes
-        "max-retries": "10",
-        "redis-enabled": false,
-        "redis-host": "localhost",
+        "ldap-base-dn": Deno.env.get("LDAPTOID_LDAP_BASE_DN") || "dc=example,dc=com",
+        "ldap-size-limit": Deno.env.get("LDAPTOID_LDAP_SIZE_LIMIT") || "1000",
+        "allow-anonymous-bind": Deno.env.get("LDAPTOID_ALLOW_ANONYMOUS_BIND") === "true",
+        "refresh-interval-ms": Deno.env.get("LDAPTOID_REFRESH_INTERVAL_MS") || "300000",
+        "max-backoff-ms": Deno.env.get("LDAPTOID_MAX_BACKOFF_MS") || "300000",
+        "max-retries": Deno.env.get("LDAPTOID_MAX_RETRIES") || "10",
+        "redis-enabled": Deno.env.get("LDAPTOID_REDIS_ENABLED") === "true",
+        "redis-host": Deno.env.get("LDAPTOID_REDIS_HOST") || "localhost",
         "redis-port": Deno.env.get("LDAPTOID_REDIS_PORT") || "6379",
-        "redis-database": "0",
+        "redis-database": Deno.env.get("LDAPTOID_REDIS_DATABASE") || "0",
         "metrics-port": Deno.env.get("LDAPTOID_METRICS_PORT") || "9090",
-        "metrics-path": "/metrics",
+        "metrics-path": Deno.env.get("LDAPTOID_METRICS_PATH") || "/metrics",
         "health-port": Deno.env.get("LDAPTOID_HEALTH_PORT") || "8080",
-        "health-path": "/health",
-        "readiness-path": "/ready",
-        "liveness-path": "/live",
-        "enabled-features": "",
+        "health-path": Deno.env.get("LDAPTOID_HEALTH_PATH") || "/health",
+        "readiness-path": Deno.env.get("LDAPTOID_READINESS_PATH") || "/ready",
+        "liveness-path": Deno.env.get("LDAPTOID_LIVENESS_PATH") || "/live",
+        "enabled-features": Deno.env.get("LDAPTOID_ENABLED_FEATURES") || "",
       },
     });
 
@@ -198,46 +198,49 @@ export class LDAPtoIDMain {
     }
 
     return {
-      ldapPort: parseInt(parsed["ldap-port"] as string),
-      ldapBindDN: parsed["ldap-bind-dn"] as string || Deno.env.get("LDAPTOID_LDAP_BIND_DN"),
-      ldapBindPassword: parsed["ldap-bind-password"] as string || Deno.env.get("LDAPTOID_LDAP_BIND_PASSWORD"),
-      ldapBaseDN: parsed["ldap-base-dn"] as string || Deno.env.get("LDAPTOID_LDAP_BASE_DN") || "dc=example,dc=com",
-      ldapSizeLimit: parseInt(parsed["ldap-size-limit"] as string),
-      allowAnonymousBind: parsed["allow-anonymous-bind"] as boolean ||
-        Deno.env.get("LDAPTOID_ALLOW_ANONYMOUS_BIND") === "true",
+      ldapPort: parseInt(Deno.env.get("LDAPTOID_LDAP_PORT") || (parsed["ldap-port"] as string)),
+      ldapBindDN: Deno.env.get("LDAPTOID_LDAP_BIND_DN") || (parsed["ldap-bind-dn"] as string),
+      ldapBindPassword: Deno.env.get("LDAPTOID_LDAP_BIND_PASSWORD") || (parsed["ldap-bind-password"] as string),
+      ldapBaseDN: Deno.env.get("LDAPTOID_LDAP_BASE_DN") || (parsed["ldap-base-dn"] as string),
+      ldapSizeLimit: parseInt(Deno.env.get("LDAPTOID_LDAP_SIZE_LIMIT") || (parsed["ldap-size-limit"] as string)),
+      allowAnonymousBind: Deno.env.get("LDAPTOID_ALLOW_ANONYMOUS_BIND") === "true" ||
+        (parsed["allow-anonymous-bind"] as boolean),
 
-      idpType: (parsed["idp-type"] as string || Deno.env.get("LDAPTOID_IDP_TYPE")) as "keycloak" | "entra" | "zitadel",
-      idpBaseUrl: parsed["idp-base-url"] as string || Deno.env.get("LDAPTOID_IDP_BASE_URL")!,
-      idpClientId: parsed["idp-client-id"] as string || Deno.env.get("LDAPTOID_IDP_CLIENT_ID")!,
-      idpClientSecret: parsed["idp-client-secret"] as string || Deno.env.get("LDAPTOID_IDP_CLIENT_SECRET")!,
-      idpRealm: parsed["idp-realm"] as string || Deno.env.get("LDAPTOID_IDP_REALM"),
-      idpTenant: parsed["idp-tenant"] as string || Deno.env.get("LDAPTOID_IDP_TENANT"),
-      idpOrganization: parsed["idp-organization"] as string || Deno.env.get("LDAPTOID_IDP_ORGANIZATION"),
+      idpType: (Deno.env.get("LDAPTOID_IDP_TYPE") || (parsed["idp-type"] as string)) as
+        | "keycloak"
+        | "entra"
+        | "zitadel",
+      idpBaseUrl: Deno.env.get("LDAPTOID_IDP_BASE_URL") || (parsed["idp-base-url"] as string)!,
+      idpClientId: Deno.env.get("LDAPTOID_IDP_CLIENT_ID") || (parsed["idp-client-id"] as string)!,
+      idpClientSecret: Deno.env.get("LDAPTOID_IDP_CLIENT_SECRET") || (parsed["idp-client-secret"] as string)!,
+      idpRealm: Deno.env.get("LDAPTOID_IDP_REALM") || (parsed["idp-realm"] as string),
+      idpTenant: Deno.env.get("LDAPTOID_IDP_TENANT") || (parsed["idp-tenant"] as string),
+      idpOrganization: Deno.env.get("LDAPTOID_IDP_ORGANIZATION") || (parsed["idp-organization"] as string),
 
-      refreshIntervalMs: parseInt(parsed["refresh-interval-ms"] as string),
-      maxBackoffMs: parseInt(parsed["max-backoff-ms"] as string),
-      maxRetries: parseInt(parsed["max-retries"] as string),
+      refreshIntervalMs: parseInt(
+        Deno.env.get("LDAPTOID_REFRESH_INTERVAL_MS") || (parsed["refresh-interval-ms"] as string),
+      ),
+      maxBackoffMs: parseInt(Deno.env.get("LDAPTOID_MAX_BACKOFF_MS") || (parsed["max-backoff-ms"] as string)),
+      maxRetries: parseInt(Deno.env.get("LDAPTOID_MAX_RETRIES") || (parsed["max-retries"] as string)),
 
-      redisEnabled: parsed["redis-enabled"] as boolean || Deno.env.get("LDAPTOID_REDIS_ENABLED") === "true",
-      redisHost: parsed["redis-host"] as string || Deno.env.get("LDAPTOID_REDIS_HOST") || "localhost",
-      redisPort: parseInt(parsed["redis-port"] as string) || parseInt(Deno.env.get("LDAPTOID_REDIS_PORT") || "6379"),
-      redisPassword: parsed["redis-password"] as string || Deno.env.get("LDAPTOID_REDIS_PASSWORD"),
-      redisDatabase: parseInt(parsed["redis-database"] as string) ||
-        parseInt(Deno.env.get("LDAPTOID_REDIS_DATABASE") || "0"),
+      redisEnabled: Deno.env.get("LDAPTOID_REDIS_ENABLED") === "true" || (parsed["redis-enabled"] as boolean),
+      redisHost: Deno.env.get("LDAPTOID_REDIS_HOST") || (parsed["redis-host"] as string),
+      redisPort: parseInt(Deno.env.get("LDAPTOID_REDIS_PORT") || (parsed["redis-port"] as string)),
+      redisPassword: Deno.env.get("LDAPTOID_REDIS_PASSWORD") || (parsed["redis-password"] as string),
+      redisDatabase: parseInt(Deno.env.get("LDAPTOID_REDIS_DATABASE") || (parsed["redis-database"] as string)),
 
-      metricsPort: parseInt(parsed["metrics-port"] as string),
-      metricsPath: parsed["metrics-path"] as string,
+      metricsPort: parseInt(Deno.env.get("LDAPTOID_METRICS_PORT") || (parsed["metrics-port"] as string)),
+      metricsPath: Deno.env.get("LDAPTOID_METRICS_PATH") || (parsed["metrics-path"] as string),
 
-      healthPort: parseInt(parsed["health-port"] as string),
-      healthPath: parsed["health-path"] as string,
-      readinessPath: parsed["readiness-path"] as string,
-      livenessPath: parsed["liveness-path"] as string,
+      healthPort: parseInt(Deno.env.get("LDAPTOID_HEALTH_PORT") || (parsed["health-port"] as string)),
+      healthPath: Deno.env.get("LDAPTOID_HEALTH_PATH") || (parsed["health-path"] as string),
+      readinessPath: Deno.env.get("LDAPTOID_READINESS_PATH") || (parsed["readiness-path"] as string),
+      livenessPath: Deno.env.get("LDAPTOID_LIVENESS_PATH") || (parsed["liveness-path"] as string),
 
-      enabledFeatures: (parsed["enabled-features"] as string || Deno.env.get("LDAPTOID_ENABLED_FEATURES") || "").split(
-        ",",
-      ).filter((f) => f.trim()),
+      enabledFeatures: (Deno.env.get("LDAPTOID_ENABLED_FEATURES") || (parsed["enabled-features"] as string) || "")
+        .split(",").filter((f) => f.trim()),
 
-      verbose: parsed.verbose as boolean || Deno.env.get("LDAPTOID_VERBOSE") === "true",
+      verbose: Deno.env.get("LDAPTOID_VERBOSE") === "true" || (parsed.verbose as boolean),
       help: parsed.help as boolean,
     };
   }
