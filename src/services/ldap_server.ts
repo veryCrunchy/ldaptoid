@@ -478,13 +478,10 @@ export class LDAPServer {
 
     // Add organizational units if in scope
     if (request.scope !== 0) { // Not base scope
-      console.log("Adding organizational units...");
       const ouEntries = this.createOUEntries(context, request);
-      console.log(`Found ${ouEntries.length} OU entries`);
       entries.push(...ouEntries);
     }
 
-    console.log(`Total entries found: ${entries.length}`);
     return entries;
   }
 
@@ -619,33 +616,20 @@ export class LDAPServer {
     const normalizedEntry = normalizeDN(entryDN);
     const normalizedBase = normalizeDN(baseObject);
 
-    console.log(`    Scope check: entry="${entryDN}" base="${baseObject}" scope=${scope}`);
-    console.log(`    Normalized: entry="${normalizedEntry}" base="${normalizedBase}"`);
-
     switch (scope) {
       case 0: { // Base
-        const baseResult = normalizedEntry === normalizedBase;
-        console.log(`    Base scope result: ${baseResult}`);
-        return baseResult;
+        return normalizedEntry === normalizedBase;
       }
       case 1: { // One level
-        if (normalizedEntry === normalizedBase) {
-          console.log(`    One level: entry equals base, returning false`);
-          return false;
-        }
+        if (normalizedEntry === normalizedBase) return false;
         const entryParts = normalizedEntry.split(",");
         const parentDN = entryParts.slice(1).join(",");
-        const oneResult = parentDN === normalizedBase;
-        console.log(`    One level: parentDN="${parentDN}" base="${normalizedBase}" result=${oneResult}`);
-        return oneResult;
+        return parentDN === normalizedBase;
       }
       case 2: { // Subtree
-        const subtreeResult = normalizedEntry === normalizedBase || normalizedEntry.endsWith("," + normalizedBase);
-        console.log(`    Subtree result: ${subtreeResult}`);
-        return subtreeResult;
+        return normalizedEntry === normalizedBase || normalizedEntry.endsWith("," + normalizedBase);
       }
       default: {
-        console.log(`    Unknown scope ${scope}, returning false`);
         return false;
       }
     }
