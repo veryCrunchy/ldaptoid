@@ -449,51 +449,30 @@ export class LDAPServer {
     }
 
     // Search users
-    console.log("Searching users...");
     for (const user of users) {
       const userAttrs = this.buildUserAttributes(user, context);
       const userDN = userAttrs.dn as string;
 
-      console.log(`Checking user: ${user.username}, DN: ${userDN}`);
-      console.log(`  - Scope check: ${this.isInSearchScope(userDN, request.baseObject, request.scope)}`);
-      console.log(`  - Filter check: ${this.matchesFilter(request.filter, user, userAttrs)}`);
+      const inScope = this.isInSearchScope(userDN, request.baseObject, request.scope);
+      const matchesFilter = inScope ? this.matchesFilter(request.filter, user, userAttrs) : false;
 
-      if (
-        this.isInSearchScope(userDN, request.baseObject, request.scope) &&
-        this.matchesFilter(request.filter, user, userAttrs)
-      ) {
-        console.log(`  - MATCH: Adding user ${user.username}`);
+      if (inScope && matchesFilter) {
         const entry = this.createUserEntry(userAttrs, request.attributes, request.typesOnly);
         entries.push(entry);
-      } else {
-        console.log(`  - NO MATCH: Skipping user ${user.username}`);
-        // Debug: If scope matches but filter doesn't, show user attributes
-        if (this.isInSearchScope(userDN, request.baseObject, request.scope)) {
-          console.log(`  - Scope matched but filter failed. User attributes:`, Object.keys(userAttrs));
-          console.log(`  - objectClass values:`, userAttrs.objectClass);
-        }
       }
     }
 
     // Search groups
-    console.log("Searching groups...");
     for (const group of groups) {
       const groupAttrs = this.buildGroupAttributes(group, context);
       const groupDN = groupAttrs.dn as string;
 
-      console.log(`Checking group: ${group.name}, DN: ${groupDN}`);
-      console.log(`  - Scope check: ${this.isInSearchScope(groupDN, request.baseObject, request.scope)}`);
-      console.log(`  - Filter check: ${this.matchesFilter(request.filter, group, groupAttrs)}`);
+      const inScope = this.isInSearchScope(groupDN, request.baseObject, request.scope);
+      const matchesFilter = inScope ? this.matchesFilter(request.filter, group, groupAttrs) : false;
 
-      if (
-        this.isInSearchScope(groupDN, request.baseObject, request.scope) &&
-        this.matchesFilter(request.filter, group, groupAttrs)
-      ) {
-        console.log(`  - MATCH: Adding group ${group.name}`);
+      if (inScope && matchesFilter) {
         const entry = this.createGroupEntry(groupAttrs, request.attributes, request.typesOnly);
         entries.push(entry);
-      } else {
-        console.log(`  - NO MATCH: Skipping group ${group.name}`);
       }
     }
 
@@ -719,19 +698,22 @@ export class LDAPServer {
 
       case FilterType.Substrings: {
         const f = filter as any;
-        const values = getAttrValues(f.type_);
+        const normalizedAttr = f.type_ ? this.normalizeStringValue(f.type_) : "";
+        const values = getAttrValues(normalizedAttr);
         const combinedValue = values.join(" ").toLowerCase();
 
         for (const substring of f.substrings || []) {
-          if (substring.initial && !combinedValue.startsWith(substring.initial.toLowerCase())) {
+          if (
+            substring.initial && !combinedValue.startsWith(this.normalizeStringValue(substring.initial).toLowerCase())
+          ) {
             return false;
           }
-          if (substring.final && !combinedValue.endsWith(substring.final.toLowerCase())) {
+          if (substring.final && !combinedValue.endsWith(this.normalizeStringValue(substring.final).toLowerCase())) {
             return false;
           }
           if (substring.any) {
             for (const anyPart of substring.any) {
-              if (!combinedValue.includes(anyPart.toLowerCase())) {
+              if (!combinedValue.includes(this.normalizeStringValue(anyPart).toLowerCase())) {
                 return false;
               }
             }
