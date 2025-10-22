@@ -36,6 +36,8 @@ export class ZitadelAdaptor implements Adaptor {
       ];
     }
 
+    console.log("[ZitadelAdaptor] Fetching users with request body:", JSON.stringify(requestBody, null, 2));
+
     const response = await fetch(`${this.baseUrl}/v2/users`, {
       method: "POST",
       headers: {
@@ -47,10 +49,13 @@ export class ZitadelAdaptor implements Adaptor {
     });
 
     if (!response.ok) {
+      console.error("[ZitadelAdaptor] Failed to fetch users:", response.status, response.statusText);
       throw new Error(`Failed to fetch users from Zitadel v2 API: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log("[ZitadelAdaptor] Raw API response:", JSON.stringify(data, null, 2));
+
     return (data.result || []).map((u: any) => {
       // Determine if this is a human or machine user
       const isHuman = !!u.human;

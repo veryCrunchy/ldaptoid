@@ -2,7 +2,7 @@
 // Main CLI Entry Point
 // Integrates all services and orchestrates startup, configuration, and graceful shutdown
 
-import { parseArgs } from "jsr:@std/cli/parse-args";
+import { parseArgs } from "@std/cli/parse-args";
 import { IdAllocator } from "../services/id_allocator.ts";
 import { SnapshotBuilder } from "../services/snapshot_builder.ts";
 import { RefreshScheduler } from "../services/refresh_scheduler.ts";
@@ -157,7 +157,7 @@ export class LDAPtoIDMain {
         p: "ldap-port",
       },
       default: {
-        "ldap-port": "389",
+        "ldap-port": Deno.env.get("LDAPTOID_LDAP_PORT") || "389",
         "ldap-base-dn": "dc=example,dc=com",
         "ldap-size-limit": "1000",
         "allow-anonymous-bind": false,
@@ -166,11 +166,11 @@ export class LDAPtoIDMain {
         "max-retries": "10",
         "redis-enabled": false,
         "redis-host": "localhost",
-        "redis-port": "6379",
+        "redis-port": Deno.env.get("LDAPTOID_REDIS_PORT") || "6379",
         "redis-database": "0",
-        "metrics-port": "9090",
+        "metrics-port": Deno.env.get("LDAPTOID_METRICS_PORT") || "9090",
         "metrics-path": "/metrics",
-        "health-port": "8080",
+        "health-port": Deno.env.get("LDAPTOID_HEALTH_PORT") || "8080",
         "health-path": "/health",
         "readiness-path": "/ready",
         "liveness-path": "/live",
@@ -321,6 +321,7 @@ export class LDAPtoIDMain {
       bindPassword: this.config.ldapBindPassword,
       baseDN: this.config.ldapBaseDN,
       sizeLimit: this.config.ldapSizeLimit,
+      allowAnonymousBind: this.config.allowAnonymousBind,
     });
 
     // Initialize refresh scheduler
